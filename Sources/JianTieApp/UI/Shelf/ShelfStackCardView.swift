@@ -65,12 +65,12 @@ public struct ShelfStackCardView: View {
             if isHovered && !isDragging {
                 Button(action: onDiscard) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.secondary)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color.secondary.opacity(0.9))
                         .background(Circle().fill(Color(NSColor.windowBackgroundColor)))
                 }
                 .buttonStyle(.plain)
-                .offset(x: -4, y: -4)
+                .padding(3)
                 .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
         }

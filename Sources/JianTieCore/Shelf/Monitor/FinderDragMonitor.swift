@@ -16,6 +16,7 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
     private var dragEndHandler: (@Sendable () -> Void)?
 
     private let dragPasteboardReader: @Sendable () -> [URL]
+    private let changeCountReader: @Sendable () -> Int
     private var lastObservedChangeCount: Int = -1
     private let lock = NSLock()
 
@@ -32,9 +33,14 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
 
             guard hasFiles else { return [] }
             return pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] ?? []
+        },
+        changeCountReader: @escaping @Sendable () -> Int = {
+            return NSPasteboard(name: .drag).changeCount
         }
     ) {
         self.dragPasteboardReader = dragPasteboardReader
+        self.changeCountReader = changeCountReader
+        self.lastObservedChangeCount = changeCountReader()
     }
 
     public func startMonitoring(
@@ -49,6 +55,7 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
         self.dragEndHandler = onDragEnd
         self.isMonitoring = true
         self.isDraggingActive = false
+        self.lastObservedChangeCount = changeCountReader()
 
         // 1. 全局监听拖拽与鼠标释放
         self.globalDragMonitor = NSEvent.addGlobalMonitorForEvents(
@@ -115,10 +122,18 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
 
         guard isMonitoring else { return }
 
+        let currentChangeCount = changeCountReader()
+
         if !isDraggingActive {
+            // 只有当剪贴板 changeCount 发生变化（系统开启了新拖拽 Session）时才触发
+            guard currentChangeCount != lastObservedChangeCount else {
+                return
+            }
+
             let urls = dragPasteboardReader()
             if !urls.isEmpty {
                 isDraggingActive = true
+                lastObservedChangeCount = currentChangeCount
                 let startCallback = dragStartHandler
                 DispatchQueue.main.async {
                     startCallback?(urls, location)
@@ -132,7 +147,12 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        guard isMonitoring, isDraggingActive else { return }
+        guard isMonitoring else { return }
+
+        // 释放鼠标时同步更新 changeCount 记录，避免后续普通的无文件点击触发历史残留数据
+        lastObservedChangeCount = changeCountReader()
+
+        guard isDraggingActive else { return }
 
         isDraggingActive = false
         let endCallback = dragEndHandler

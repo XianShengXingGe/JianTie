@@ -152,4 +152,46 @@ final class ShelfEngineEdgeSwitchingTests: XCTestCase {
         XCTAssertNotNil(rightVisibleFrame)
         XCTAssertGreaterThan(rightVisibleFrame!.minX, leftVisibleFrame!.minX)
     }
+
+    func test_handleDragStarted_whenShelfHasStacks_doesNotSwitchScreen() {
+        let screen1 = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
+        )
+        let screen2 = ScreenInfo(
+            frame: CGRect(x: 1920, y: 0, width: 2560, height: 1440),
+            visibleFrame: CGRect(x: 1920, y: 25, width: 2560, height: 1415)
+        )
+
+        let engine = ShelfEngine(
+            preferences: mockPrefs,
+            dragMonitor: mockDrag,
+            autoStart: false
+        )
+
+        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try? "test".write(to: tempFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+
+        // 1. 在 Screen 1 悬停并存入文件
+        engine.handleEdgeDwell(on: screen1)
+        _ = engine.dropFiles([tempFile])
+        XCTAssertEqual(engine.state, .stored(screenFrame: screen1.frame, edge: .left))
+
+        // 2. 模拟用户在 Screen 2 上拖拽新文件
+        var revealedVisibleFrame: CGRect?
+        engine.onRequestReveal = { visible, _, _ in
+            revealedVisibleFrame = visible
+        }
+
+        engine.handleDragStarted(files: [tempFile], at: CGPoint(x: 2100, y: 500))
+
+        // 验证：Shelf 依然维持在 Screen 1 上，不会跳跃切换到 Screen 2
+        if case let .revealedDragging(screenFrame, _) = engine.state {
+            XCTAssertEqual(screenFrame, screen1.frame)
+        } else {
+            XCTFail("Expected revealedDragging state with screen1 frame")
+        }
+        XCTAssertEqual(revealedVisibleFrame?.minX, 8.0) // Screen 1 left margin
+    }
 }

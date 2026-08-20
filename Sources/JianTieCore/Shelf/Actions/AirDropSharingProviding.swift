@@ -47,6 +47,23 @@ public final class SystemAirDropService: NSObject, AirDropSharingProviding, NSSh
 
     // MARK: - NSSharingServiceDelegate
 
+    nonisolated public func sharingService(
+        _ sharingService: NSSharingService,
+        sourceFrameOnScreenForShareItem item: Any
+    ) -> NSRect {
+        MainActor.assumeIsolated {
+            let screen = NSScreen.main ?? NSScreen.screens.first
+            let visibleFrame = screen?.visibleFrame ?? screen?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
+            // 返回屏幕正中央矩形，使系统 AirDrop 弹窗从屏幕中心弹出/淡入展示
+            return NSRect(
+                x: visibleFrame.midX - 20,
+                y: visibleFrame.midY - 20,
+                width: 40,
+                height: 40
+            )
+        }
+    }
+
     nonisolated public func sharingService(_ sharingService: NSSharingService, didShareItems items: [Any]) {
         Task { @MainActor in
             let handler = self.completionHandler

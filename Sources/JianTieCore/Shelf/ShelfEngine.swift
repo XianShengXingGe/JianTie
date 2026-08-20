@@ -310,14 +310,21 @@ public final class ShelfEngine: ObservableObject {
     /// 处理 Finder 拖拽开始事件
     public func handleDragStarted(files: [URL], at location: CGPoint) {
         let screens = ScreenInfo.currentScreens()
-        guard let screen = geometryCalculator.findScreen(for: location, in: screens) ?? screens.first else {
-            return
+        let targetScreen: ScreenInfo
+        if let existing = activeScreen, !stacks.isEmpty {
+            // 当 Shelf 里已有文件暂存时，维持原屏幕位置，不再跟随鼠标切换屏幕
+            targetScreen = existing
+        } else {
+            guard let screen = geometryCalculator.findScreen(for: location, in: screens) ?? screens.first else {
+                return
+            }
+            targetScreen = screen
+            self.activeScreen = screen
         }
 
-        self.activeScreen = screen
-        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
+        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: targetScreen, edge: edge)
 
-        let newState = ShelfState.revealedDragging(screenFrame: screen.frame, edge: edge)
+        let newState = ShelfState.revealedDragging(screenFrame: targetScreen.frame, edge: edge)
         self.state = newState
         self.onStateChanged?(newState)
         self.onRequestReveal?(visibleFrame, hiddenFrame, true)
