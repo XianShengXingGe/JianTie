@@ -38,7 +38,7 @@ final class SharedShelfState: @unchecked Sendable {
     }
 }
 
-/// Shelf 核心业务引擎，协调拖拽探测、多屏锚定计算与边缘停留状态机
+/// Shelf 核心业务引擎，协调拖拽探测、多屏锚定、Stack 暂存生命周期与后台巡检
 @MainActor
 public final class ShelfEngine: ObservableObject {
     @Published public private(set) var state: ShelfState = .hidden {
@@ -53,9 +53,12 @@ public final class ShelfEngine: ObservableObject {
         }
     }
 
+    @Published public private(set) var stacks: [ShelfStack] = []
+
     public let dragMonitor: DragMonitoring
     public let edgeMonitor: ShelfEdgeMonitor
     public let geometryCalculator: ShelfGeometryCalculator
+    public let pruner: ShelfPruner
 
     public var onRequestReveal: ((_ visibleFrame: CGRect, _ hiddenFrame: CGRect, _ isDragging: Bool) -> Void)?
     public var onRequestHide: ((_ hiddenFrame: CGRect) -> Void)?
@@ -69,10 +72,12 @@ public final class ShelfEngine: ObservableObject {
         dragMonitor: DragMonitoring? = nil,
         edgeMonitor: ShelfEdgeMonitor? = nil,
         geometryCalculator: ShelfGeometryCalculator = ShelfGeometryCalculator(),
+        pruner: ShelfPruner? = nil,
         autoStart: Bool = true
     ) {
         self.edge = edge
         self.geometryCalculator = geometryCalculator
+        self.pruner = pruner ?? ShelfPruner()
         self.sharedState.edge = edge
         self.sharedState.isRevealed = false
 
@@ -98,7 +103,7 @@ public final class ShelfEngine: ObservableObject {
         }
     }
 
-    /// 启动所有监听服务
+    /// 启动所有监听与巡检服务
     public func startMonitoring() {
         dragMonitor.startMonitoring(
             onDragStart: { [weak self] files, location in
@@ -125,13 +130,113 @@ public final class ShelfEngine: ObservableObject {
                 }
             }
         )
+
+        pruner.startPeriodicPruning(
+            getStacks: { [weak self] in
+                guard let self = self else { return [] }
+                if Thread.isMainThread {
+                    return MainActor.assumeIsolated { self.stacks }
+                } else {
+                    return DispatchQueue.main.sync {
+                        MainActor.assumeIsolated { self.stacks }
+                    }
+                }
+            },
+            onPruned: { [weak self] validStacks in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    self.stacks = validStacks
+                    if validStacks.isEmpty && self.state.isVisible && !self.state.isDragging {
+                        self.dismiss()
+                    }
+                }
+            }
+        )
     }
 
-    /// 停止所有监听服务
+    /// 停止所有监听与巡检服务
     public func stopMonitoring() {
         dragMonitor.stopMonitoring()
         edgeMonitor.stopMonitoring()
+        pruner.stopPeriodicPruning()
     }
+
+    // MARK: - Stack Operations
+
+    /// 接收拖入的文件 URL 列表，生成原子 Stack 并暂存
+    @discardableResult
+    public func dropFiles(_ urls: [URL]) -> ShelfStack? {
+        guard !urls.isEmpty else { return nil }
+
+        let references = urls.map { ShelfFileReference(url: $0) }
+        let stack = ShelfStack(files: references)
+        stacks.insert(stack, at: 0)
+
+        #if canImport(AppKit)
+        let screens = ScreenInfo.currentScreens()
+        #else
+        let screens: [ScreenInfo] = []
+        #endif
+
+        let screen = activeScreen ?? screens.first
+        self.activeScreen = screen
+
+        if let screen = screen {
+            let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
+            let newState = ShelfState.stored(screenFrame: screen.frame, edge: edge)
+            self.state = newState
+            self.onStateChanged?(newState)
+            self.onRequestReveal?(visibleFrame, hiddenFrame, false)
+        } else {
+            let newState = ShelfState.stored(screenFrame: .zero, edge: edge)
+            self.state = newState
+            self.onStateChanged?(newState)
+        }
+
+        return stack
+    }
+
+    /// 移除指定 Stack（例如点击 ✕ 或外部成功消费）
+    public func removeStack(id: UUID) {
+        stacks.removeAll { $0.id == id }
+        if stacks.isEmpty {
+            dismiss()
+        }
+    }
+
+    /// 处理 Stack 拖出（Drag Out）结束事件
+    public func handleStackDragOutCompleted(stackId: UUID, success: Bool) {
+        if success {
+            removeStack(id: stackId)
+        } else {
+            // 拖拽取消或失败，安全保留 Stack 并恢复为 Stored 状态
+            if !stacks.isEmpty {
+                #if canImport(AppKit)
+                let screens = ScreenInfo.currentScreens()
+                #else
+                let screens: [ScreenInfo] = []
+                #endif
+                let screen = activeScreen ?? screens.first
+                let frame = screen?.frame ?? .zero
+                let newState = ShelfState.stored(screenFrame: frame, edge: edge)
+                self.state = newState
+                self.onStateChanged?(newState)
+            }
+        }
+    }
+
+    /// 手动/即时执行失效 Stack 淘汰
+    public func pruneInvalidStacks() {
+        let (valid, removed) = pruner.prune(stacks: stacks)
+        if removed > 0 {
+            self.stacks = valid
+            if valid.isEmpty && state.isVisible && !state.isDragging {
+                dismiss()
+            }
+        }
+    }
+
+    // MARK: - Lifecycle & State Machine Transitions
 
     /// 处理 Finder 拖拽开始事件
     public func handleDragStarted(files: [URL], at location: CGPoint) {
@@ -158,7 +263,15 @@ public final class ShelfEngine: ObservableObject {
     public func handleDragEnded() {
         guard case .revealedDragging = state else { return }
 
-        dismiss()
+        if !stacks.isEmpty {
+            // 如果 Shelf 中已有暂存 Stack，恢复为 Stored 展示状态
+            let screenFrame = activeScreen?.frame ?? .zero
+            let newState = ShelfState.stored(screenFrame: screenFrame, edge: edge)
+            self.state = newState
+            self.onStateChanged?(newState)
+        } else {
+            dismiss()
+        }
     }
 
     /// 处理边缘停留 150ms 触发
@@ -168,7 +281,13 @@ public final class ShelfEngine: ObservableObject {
         self.activeScreen = screen
         let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
 
-        let newState = ShelfState.revealedEmpty(screenFrame: screen.frame, edge: edge)
+        let newState: ShelfState
+        if stacks.isEmpty {
+            newState = .revealedEmpty(screenFrame: screen.frame, edge: edge)
+        } else {
+            newState = .stored(screenFrame: screen.frame, edge: edge)
+        }
+
         self.state = newState
         self.onStateChanged?(newState)
         self.onRequestReveal?(visibleFrame, hiddenFrame, false)
@@ -176,7 +295,8 @@ public final class ShelfEngine: ObservableObject {
 
     /// 处理移出 600ms 自动收回触发
     public func handleAutoRetract() {
-        guard case .revealedEmpty = state else { return }
+        // 仅在空状态悬停展开且无任何 Stack 时自动收回
+        guard case .revealedEmpty = state, stacks.isEmpty else { return }
 
         dismiss()
     }

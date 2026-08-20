@@ -18,6 +18,7 @@ final class ShelfContainerHostView<Content: View>: NSHostingView<Content> {
     private var trackingArea: NSTrackingArea?
     var onMouseEntered: (() -> Void)?
     var onMouseExited: (() -> Void)?
+    var onDropFiles: (([URL]) -> Void)?
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -50,8 +51,12 @@ final class ShelfContainerHostView<Content: View>: NSHostingView<Content> {
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        // Issue #6 将在此处理文件接收与 Stack 封装
-        return true
+        let pboard = sender.draggingPasteboard
+        if let urls = pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
+            onDropFiles?(urls)
+            return true
+        }
+        return false
     }
 }
 
@@ -100,6 +105,10 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
 
         hostView.onMouseExited = { [weak self] in
             self?.engine.handleMouseExitedShelf()
+        }
+
+        hostView.onDropFiles = { [weak self] urls in
+            self?.engine.dropFiles(urls)
         }
 
         window.contentView = hostView
