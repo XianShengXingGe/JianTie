@@ -135,8 +135,8 @@ final class ShelfActionZoneTests: XCTestCase {
             XCTFail("Expected text content written to pasteboard")
         }
 
-        // 2. 验证内联反馈
-        XCTAssertEqual(engine.actionFeedback, "✓ Path copied")
+        // 2. 验证内联反馈（使用本地化键确保语言无关）
+        XCTAssertEqual(engine.actionFeedback, L10n.tr("shelf.action_path_copied"))
 
         // 3. 验证 Stack 立即被移除，且由于 Shelf 变空触发 dismiss
         XCTAssertTrue(engine.stacks.isEmpty)

@@ -280,7 +280,7 @@ public final class ShelfEngine: ObservableObject {
         pasteboardWriter.write(content: .text(ClipboardTextContent(plainText: pathString)))
 
         // 展示轻量内联提示反馈
-        self.actionFeedback = "✓ Path copied"
+        self.actionFeedback = L10n.tr("shelf.action_path_copied")
         feedbackTask?.cancel()
         feedbackTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 1_200_000_000)

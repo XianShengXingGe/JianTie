@@ -8,9 +8,9 @@ public enum HotKeyValidationError: Error, Equatable, Sendable {
     public var localizedDescription: String {
         switch self {
         case .modifierRequired:
-            return "快捷键必须包含修饰键 (⌘/⌥/⌃/⇧)"
+            return L10n.tr("hotkey.modifier_required")
         case .invalidKeyCode:
-            return "无效的按键组合"
+            return L10n.tr("hotkey.invalid_key_combo")
         }
     }
 }

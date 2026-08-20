@@ -25,6 +25,13 @@ public struct SocialLinkItem: Identifiable, Equatable {
         self.copyValue = copyValue
     }
 
+    /// 本地化平台展示名称
+    public var localizedPlatform: String {
+        let key = "social.platform.\(id)"
+        let localized = L10n.tr(key)
+        return localized != key ? localized : platform
+    }
+
     /// 预设官方互动平台列表
     public static let standardItems: [SocialLinkItem] = [
         SocialLinkItem(

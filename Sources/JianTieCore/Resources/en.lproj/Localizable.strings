@@ -64,4 +64,83 @@
 "retention.days7" = "7 Days";
 "retention.days30" = "30 Days";
 "retention.days90" = "90 Days";
+"retention.days180" = "180 Days";
 "retention.unlimited" = "Forever";
+
+/* Clipboard Panel */
+"clipboard.search_placeholder" = "Search clipboard history...";
+"clipboard.shortcut_esc" = "ESC Exit";
+"clipboard.shortcut_navigate" = "↑↓ Navigate";
+"clipboard.shortcut_paste" = "↵ Paste";
+"clipboard.empty_state" = "No clipboard history yet";
+"clipboard.search_no_results" = "No matches found for \"%@\"";
+"clipboard.delete_item" = "Remove from history";
+"clipboard.rich_text" = "Rich Text";
+"clipboard.characters_count" = "%d chars";
+"clipboard.invalid_image_data" = "Invalid image data";
+
+/* Relative Time */
+"time.just_now" = "Just now";
+"time.minutes_ago" = "%d min ago";
+"time.hours_ago" = "%d hr ago";
+
+/* Shelf Panel */
+"shelf.drag_handle_tooltip" = "Drag to move Shelf dock position";
+"shelf.empty_drop_hint" = "Drop files here";
+"shelf.empty_state" = "Shelf is empty";
+"shelf.release_to_add_stack" = "Release to add new Stack";
+"shelf.action_airdrop" = "AirDrop";
+"shelf.action_copy_path" = "Copy Path";
+"shelf.action_path_copied" = "✓ Path copied";
+"shelf.files_count" = "%d files";
+"shelf.file" = "file";
+"shelf.files_count_with_size" = "%d files · %@";
+"shelf.empty" = "Empty";
+"shelf.popover_contains_files" = "Contains %d files";
+"shelf.popover_file_details" = "File Details";
+"shelf.popover_hint" = "Space to preview · Drag to move out";
+"shelf.popover_preview_help" = "Press Space or click to preview";
+
+/* HotKey Recorder & Modifiers */
+"hotkey.recording_placeholder" = "Press shortcut...";
+"hotkey.recording_help" = "Press key combination on keyboard (Esc to cancel, Delete to reset)";
+"hotkey.click_to_record" = "Click to record new shortcut";
+"hotkey.reset_to_default_help" = "Reset to default shortcut (Double-tap ⌘)";
+"hotkey.section_double_tap" = "Common Double-Tap Modifiers";
+"hotkey.record_custom" = "Record Custom Shortcut...";
+"hotkey.restore_default" = "Restore Default Shortcut (Double-tap ⌘)";
+"hotkey.options_menu_help" = "Shortcut options and double-tap presets";
+"hotkey.modifier_required" = "Shortcut must include a modifier key (⌘/⌥/⌃/⇧)";
+"hotkey.invalid_key_combo" = "Invalid key combination";
+"hotkey.double_tap" = "Double-Tap %@";
+
+/* Social Links & Support */
+"social.platform.xiaohongshu" = "Xiaohongshu";
+"social.platform.weibo" = "Weibo";
+"social.platform.email" = "Business Email";
+"social.open" = "Open";
+"social.open_help" = "Click to open %@";
+"social.copy" = "Copy";
+"social.copied" = "Copied";
+"social.copy_help" = "Copy %@";
+"social.copied_help" = "Copied to clipboard";
+
+/* Accessibility Permission Guidance */
+"accessibility.guidance_window_title" = "JianTie Permission Guide";
+"accessibility.guidance_title" = "JianTie Requires Accessibility Permission";
+"accessibility.guidance_desc" = "To support Direct Paste for instantly pasting items into target apps, JianTie requires macOS Accessibility permission.";
+"accessibility.button_later" = "Later";
+"accessibility.button_open_settings" = "Grant in System Settings";
+
+/* Developer Donation */
+"donation.modal_title" = "Buy the Developer a Coffee";
+"donation.modal_subtitle" = "If JianTie boosts your workflow, consider supporting its ongoing development ☕️";
+"donation.close_tooltip" = "Close (ESC)";
+"donation.channel_wechat" = "WeChat Pay";
+"donation.channel_alipay" = "Alipay";
+"donation.channel_wechat_hint" = "Scan QR code with WeChat to tip";
+"donation.channel_alipay_hint" = "Scan QR code with Alipay to tip";
+"donation.qr_preparing" = "%@ QR code coming soon";
+"donation.qr_placeholder_desc" = "QR code not configured for this channel yet. Feel free to switch to 【%@】.";
+"donation.switch_to_channel" = "Switch to %@";
+"donation.thank_you" = "Thank you for your trust and support";

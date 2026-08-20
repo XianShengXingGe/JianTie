@@ -10,18 +10,18 @@ public enum DonationChannel: String, CaseIterable, Identifiable {
     public var title: String {
         switch self {
         case .wechat:
-            return "微信支付"
+            return L10n.tr("donation.channel_wechat")
         case .alipay:
-            return "支付宝"
+            return L10n.tr("donation.channel_alipay")
         }
     }
 
     public var subtitle: String {
         switch self {
         case .wechat:
-            return "使用微信扫一扫打赏"
+            return L10n.tr("donation.channel_wechat_hint")
         case .alipay:
-            return "使用支付宝扫一扫打赏"
+            return L10n.tr("donation.channel_alipay_hint")
         }
     }
 

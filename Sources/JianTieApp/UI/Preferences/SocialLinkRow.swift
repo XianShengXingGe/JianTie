@@ -19,6 +19,7 @@ public extension SocialLinkItem {
 
 /// 社交渠道交互项视图
 public struct SocialLinkRow: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     public let item: SocialLinkItem
     @State private var isCopied: Bool = false
     @State private var isHovered: Bool = false
@@ -36,7 +37,7 @@ public struct SocialLinkRow: View {
                     .foregroundColor(item.accentColor)
                     .frame(width: 18, height: 18)
 
-                Text(item.platform)
+                Text(item.localizedPlatform)
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(.primary.opacity(0.85))
 
@@ -57,7 +58,7 @@ public struct SocialLinkRow: View {
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.up.forward.square")
                             .font(.system(size: 11))
-                        Text("直达")
+                        Text(L10n.tr("social.open"))
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundColor(.primary.opacity(0.75))
@@ -66,7 +67,7 @@ public struct SocialLinkRow: View {
                     .liquidGlassBadge(isCapsule: true)
                 }
                 .buttonStyle(.plain)
-                .help("点击打开 \(item.platform)")
+                .help(L10n.tr("social.open_help", item.localizedPlatform))
             }
 
             // 一键复制按钮
@@ -74,7 +75,7 @@ public struct SocialLinkRow: View {
                 HStack(spacing: 3) {
                     Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
                         .font(.system(size: 11, weight: isCopied ? .bold : .regular))
-                    Text(isCopied ? "已复制" : "复制")
+                    Text(isCopied ? L10n.tr("social.copied") : L10n.tr("social.copy"))
                         .font(.system(size: 11, weight: isCopied ? .bold : .medium))
                 }
                 .foregroundColor(isCopied ? .green : .primary.opacity(0.75))
@@ -83,7 +84,7 @@ public struct SocialLinkRow: View {
                 .liquidGlassBadge(isCapsule: true, tintColor: isCopied ? .green : nil)
             }
             .buttonStyle(.plain)
-            .help(isCopied ? "已复制到剪贴板" : "复制 \(item.copyValue)")
+            .help(isCopied ? L10n.tr("social.copied_help") : L10n.tr("social.copy_help", item.copyValue))
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)

@@ -4,6 +4,7 @@ import JianTieCore
 
 /// 剪贴板历史浮层主视图
 public struct ClipboardPanelView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     @ObservedObject public var viewModel: ClipboardViewModel
     public let onSelectAndPaste: (ClipboardItem) -> Void
 
@@ -49,7 +50,7 @@ public struct ClipboardPanelView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.secondary)
 
-            TextField("搜索剪贴板历史...", text: $viewModel.searchText)
+            TextField(L10n.tr("clipboard.search_placeholder"), text: $viewModel.searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 14))
                 .focused($isSearchFocused)
@@ -66,9 +67,9 @@ public struct ClipboardPanelView: View {
             Spacer()
 
             HStack(spacing: 6) {
-                keyBadge("ESC 退出")
-                keyBadge("↑↓ 切换")
-                keyBadge("↵ 回贴")
+                keyBadge(L10n.tr("clipboard.shortcut_esc"))
+                keyBadge(L10n.tr("clipboard.shortcut_navigate"))
+                keyBadge(L10n.tr("clipboard.shortcut_paste"))
             }
         }
         .padding(.horizontal, 12)
@@ -130,7 +131,7 @@ public struct ClipboardPanelView: View {
                 .font(.system(size: 36))
                 .foregroundColor(.secondary.opacity(0.6))
 
-            Text(viewModel.searchText.isEmpty ? "暂无剪贴板历史记录" : "未找到匹配 \"\(viewModel.searchText)\" 的内容")
+            Text(viewModel.searchText.isEmpty ? L10n.tr("clipboard.empty_state") : L10n.tr("clipboard.search_no_results", viewModel.searchText))
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
             Spacer()

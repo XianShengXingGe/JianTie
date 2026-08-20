@@ -1,4 +1,5 @@
 import SwiftUI
+import JianTieCore
 
 /// Shelf 顶部轻量拖拽手柄条，提供视觉引导与拖拽手势
 public struct ShelfGrabberView: View {
@@ -33,6 +34,7 @@ public struct ShelfGrabberView: View {
         }
         .frame(height: 12)
         .contentShape(Rectangle())
+        .help(L10n.tr("shelf.drag_handle_tooltip"))
         .onHover { hovering in
             self.isHovering = hovering
         }

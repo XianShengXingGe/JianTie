@@ -3,6 +3,7 @@ import JianTieCore
 
 /// Shelf 暂存架主视图，支持空状态提示、多 Stack 列表展示与底部动态 Action Zone
 public struct ShelfPanelView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     @ObservedObject public var engine: ShelfEngine
     public var onPanelDragStart: (() -> Void)?
     public var onPanelDragMove: (() -> Void)?
@@ -80,7 +81,7 @@ public struct ShelfPanelView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 12, weight: .semibold))
-                    Text("松开以添加新 Stack")
+                    Text(L10n.tr("shelf.release_to_add_stack"))
                         .font(.system(size: 11, weight: .semibold))
                 }
                 .foregroundColor(.accentColor)
@@ -133,7 +134,7 @@ public struct ShelfPanelView: View {
                         .font(.system(size: 30))
                         .foregroundColor(.accentColor)
 
-                    Text("暂存至此")
+                    Text(L10n.tr("shelf.empty_drop_hint"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.primary)
                 }
@@ -145,7 +146,7 @@ public struct ShelfPanelView: View {
                         .font(.system(size: 26))
                         .foregroundColor(.secondary.opacity(0.8))
 
-                    Text("暂存架为空")
+                    Text(L10n.tr("shelf.empty_state"))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                 }

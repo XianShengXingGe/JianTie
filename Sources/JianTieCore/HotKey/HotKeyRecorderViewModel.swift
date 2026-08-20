@@ -105,7 +105,7 @@ public final class HotKeyRecorderViewModel: ObservableObject {
             return true
         } else {
             // 非法按键（例如单字符无修饰键）：展示轻量错误提示，保持录制状态
-            let message = validation.error?.localizedDescription ?? "快捷键必须包含修饰键 (⌘/⌥/⌃/⇧)"
+            let message = validation.error?.localizedDescription ?? L10n.tr("hotkey.modifier_required")
             showError(message: message)
             return true
         }

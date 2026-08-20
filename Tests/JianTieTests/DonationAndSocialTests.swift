@@ -9,14 +9,16 @@ final class DonationAndSocialTests: XCTestCase {
 
         let wechat = DonationChannel.wechat
         XCTAssertEqual(wechat.id, "wechat")
-        XCTAssertEqual(wechat.title, "微信支付")
+        XCTAssertFalse(wechat.title.isEmpty)
+        XCTAssertEqual(wechat.title, L10n.tr("donation.channel_wechat"))
         XCTAssertEqual(wechat.resourceBaseName, "wechat_qr")
         XCTAssertFalse(wechat.subtitle.isEmpty)
         XCTAssertFalse(wechat.iconSystemName.isEmpty)
 
         let alipay = DonationChannel.alipay
         XCTAssertEqual(alipay.id, "alipay")
-        XCTAssertEqual(alipay.title, "支付宝")
+        XCTAssertFalse(alipay.title.isEmpty)
+        XCTAssertEqual(alipay.title, L10n.tr("donation.channel_alipay"))
         XCTAssertEqual(alipay.resourceBaseName, "alipay_qr")
         XCTAssertFalse(alipay.subtitle.isEmpty)
         XCTAssertFalse(alipay.iconSystemName.isEmpty)
@@ -32,6 +34,7 @@ final class DonationAndSocialTests: XCTestCase {
             return
         }
         XCTAssertEqual(xhs.platform, "小红书")
+        XCTAssertEqual(xhs.localizedPlatform, L10n.tr("social.platform.xiaohongshu"))
         XCTAssertEqual(xhs.displayText, "先声行歌")
         XCTAssertEqual(xhs.copyValue, "先声行歌")
         XCTAssertNotNil(xhs.openURL)
@@ -43,6 +46,7 @@ final class DonationAndSocialTests: XCTestCase {
             return
         }
         XCTAssertEqual(weibo.platform, "微博")
+        XCTAssertEqual(weibo.localizedPlatform, L10n.tr("social.platform.weibo"))
         XCTAssertEqual(weibo.displayText, "@先声行歌")
         XCTAssertEqual(weibo.copyValue, "https://weibo.com/u/3207903867")
         XCTAssertEqual(weibo.openURL?.absoluteString, "https://weibo.com/u/3207903867")
@@ -53,6 +57,7 @@ final class DonationAndSocialTests: XCTestCase {
             return
         }
         XCTAssertEqual(email.platform, "合作邮箱")
+        XCTAssertEqual(email.localizedPlatform, L10n.tr("social.platform.email"))
         XCTAssertEqual(email.displayText, "xianshengxingge@163.com")
         XCTAssertEqual(email.copyValue, "xianshengxingge@163.com")
         XCTAssertEqual(email.openURL?.scheme, "mailto")

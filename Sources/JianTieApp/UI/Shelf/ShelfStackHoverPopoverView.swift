@@ -4,6 +4,7 @@ import JianTieCore
 
 /// Shelf 卡片悬停展开的富信息浮层，展示 Stack 内全部文件的全名、体积与快捷预览入口
 public struct ShelfStackHoverPopoverView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     public let stack: ShelfStack
     public let onPreviewSingleFile: (URL) -> Void
 
@@ -18,7 +19,7 @@ public struct ShelfStackHoverPopoverView: View {
         VStack(alignment: .leading, spacing: 8) {
             // Header
             HStack {
-                Text(stack.count > 1 ? "包含 \(stack.count) 个文件" : "文件详情")
+                Text(stack.count > 1 ? L10n.tr("shelf.popover_contains_files", stack.count) : L10n.tr("shelf.popover_file_details"))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
 
@@ -59,7 +60,7 @@ public struct ShelfStackHoverPopoverView: View {
                     .padding(.vertical, 1.5)
                     .liquidGlassBadge(isCapsule: false, cornerRadius: 4)
 
-                Text("空格预览 · 拖拽可移出")
+                Text(L10n.tr("shelf.popover_hint"))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
                 Spacer()
@@ -115,7 +116,7 @@ public struct ShelfStackHoverPopoverView: View {
                         .background(Circle().fill(Color.accentColor.opacity(0.12)))
                 }
                 .buttonStyle(.plain)
-                .help("按空格或点击预览此文件")
+                .help(L10n.tr("shelf.popover_preview_help"))
             }
         }
         .padding(.horizontal, 6)

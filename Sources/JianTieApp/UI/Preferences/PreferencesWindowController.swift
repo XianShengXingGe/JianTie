@@ -33,7 +33,7 @@ public final class PreferencesWindowController: NSWindowController, NSWindowDele
             backing: .buffered,
             defer: false
         )
-        window.title = "偏好设置"
+        window.title = L10n.tr("preferences.window_title")
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.standardWindowButton(.closeButton)?.isHidden = true

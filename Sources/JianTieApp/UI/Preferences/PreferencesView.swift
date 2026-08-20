@@ -4,6 +4,7 @@ import JianTieCore
 
 /// 偏好设置 SwiftUI 主视图
 public struct PreferencesView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     @ObservedObject public var viewModel: PreferencesViewModel
     public var onClose: (() -> Void)?
     @State private var showDonationModal: Bool = false
@@ -19,7 +20,7 @@ public struct PreferencesView: View {
         VStack(spacing: 0) {
             // Window Title & Drag Bar
             HStack {
-                Text("偏好设置")
+                Text(L10n.tr("preferences.window_title"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.secondary)
 
@@ -39,7 +40,7 @@ public struct PreferencesView: View {
                         .background(Circle().fill(Color.primary.opacity(0.08)))
                 }
                 .buttonStyle(.plain)
-                .help("关闭设置窗口 (ESC)")
+                .help(L10n.tr("preferences.close_tooltip"))
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
@@ -71,7 +72,7 @@ public struct PreferencesView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("简贴")
+                        Text(L10n.tr("preferences.app_name"))
                             .font(.title3.weight(.bold))
                         Text(viewModel.appVersionText)
                             .font(.system(size: 11, weight: .semibold, design: .rounded))
@@ -81,7 +82,7 @@ public struct PreferencesView: View {
                             .liquidGlassBadge(isCapsule: true)
                     }
 
-                    Text("轻量、极简的 macOS 文件暂存与剪贴板工具")
+                    Text(L10n.tr("preferences.app_tagline"))
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
@@ -107,14 +108,14 @@ public struct PreferencesView: View {
                 VStack(spacing: 16) {
                     // Section 0: General
                     VStack(alignment: .leading, spacing: 8) {
-                        sectionLabel(title: "通用设置 (General)", icon: "gearshape")
+                        sectionLabel(title: L10n.tr("preferences.section.general"), icon: "gearshape")
 
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(alignment: .center, spacing: 16) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("开机自启 (随系统启动)")
+                                    Text(L10n.tr("preferences.launch_at_login"))
                                         .font(.body)
-                                    Text("登录 macOS 系统时自动在后台启动简贴并常驻菜单栏。")
+                                    Text(L10n.tr("preferences.launch_at_login_desc"))
                                         .font(.footnote)
                                         .foregroundColor(.secondary)
                                 }
@@ -134,9 +135,9 @@ public struct PreferencesView: View {
 
                             HStack(alignment: .center, spacing: 16) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("界面语言 (Language)")
+                                    Text(L10n.tr("preferences.language"))
                                         .font(.body)
-                                    Text("更改界面语言后将实时应用至所有窗口与菜单栏，无需重启应用。")
+                                    Text(L10n.tr("preferences.language_desc"))
                                         .font(.footnote)
                                         .foregroundColor(.secondary)
                                 }
@@ -161,11 +162,11 @@ public struct PreferencesView: View {
 
                     // Section 1: Shelf
                     VStack(alignment: .leading, spacing: 8) {
-                        sectionLabel(title: "暂存架 (Shelf)", icon: "sidebar.squares.left")
+                        sectionLabel(title: L10n.tr("preferences.section.shelf"), icon: "sidebar.squares.left")
 
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(alignment: .center, spacing: 16) {
-                                Text("屏幕停靠边缘")
+                                Text(L10n.tr("preferences.shelf_edge"))
                                     .font(.body)
 
                                 Spacer()
@@ -174,14 +175,14 @@ public struct PreferencesView: View {
                                     get: { viewModel.shelfEdge },
                                     set: { viewModel.setShelfEdge($0) }
                                 )) {
-                                    Text("屏幕左侧").tag(ShelfEdge.left)
-                                    Text("屏幕右侧").tag(ShelfEdge.right)
+                                    Text(L10n.tr("preferences.shelf_edge_left")).tag(ShelfEdge.left)
+                                    Text(L10n.tr("preferences.shelf_edge_right")).tag(ShelfEdge.right)
                                 }
                                 .pickerStyle(.segmented)
                                 .frame(width: 170)
                             }
 
-                            Text("文件拖拽至屏幕边缘或鼠标贴边悬停 150ms 时滑出暂存架，设置变更实时生效。")
+                            Text(L10n.tr("preferences.shelf_desc"))
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -192,14 +193,14 @@ public struct PreferencesView: View {
 
                     // Section 2: Clipboard
                     VStack(alignment: .leading, spacing: 8) {
-                        sectionLabel(title: "剪贴板历史 (Clipboard)", icon: "clock.arrow.circlepath")
+                        sectionLabel(title: L10n.tr("preferences.section.clipboard"), icon: "clock.arrow.circlepath")
 
                         VStack(alignment: .leading, spacing: 10) {
                             HStack(alignment: .center) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("全局唤出快捷键")
+                                    Text(L10n.tr("preferences.hotkey"))
                                         .font(.body)
-                                    Text("支持点击录制或选择双击修饰键")
+                                    Text(L10n.tr("preferences.hotkey_desc"))
                                         .font(.footnote)
                                         .foregroundColor(.secondary)
                                 }
@@ -213,7 +214,7 @@ public struct PreferencesView: View {
                                 .background(Color.primary.opacity(0.06))
 
                             HStack(alignment: .center) {
-                                Text("历史容量上限")
+                                Text(L10n.tr("preferences.capacity_limit"))
                                     .font(.body)
                                 Spacer()
                                 Picker("", selection: Binding(
@@ -229,7 +230,7 @@ public struct PreferencesView: View {
                             }
 
                             HStack(alignment: .center) {
-                                Text("保存过期周期")
+                                Text(L10n.tr("preferences.retention_period"))
                                     .font(.body)
                                 Spacer()
                                 Picker("", selection: Binding(
@@ -254,9 +255,9 @@ public struct PreferencesView: View {
 
                             HStack(alignment: .center) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("清空历史记录")
+                                    Text(L10n.tr("preferences.clear_history"))
                                         .font(.body)
-                                    Text("完全清除所有剪贴板记录与本地图片缓存")
+                                    Text(L10n.tr("preferences.clear_history_desc"))
                                         .font(.footnote)
                                         .foregroundColor(.secondary)
                                 }
@@ -268,7 +269,7 @@ public struct PreferencesView: View {
                                 }) {
                                     HStack(spacing: 4) {
                                         Image(systemName: "trash")
-                                        Text("清空剪贴板内容")
+                                        Text(L10n.tr("preferences.clear_history_button"))
                                     }
                                 }
                                 .buttonStyle(.bordered)
@@ -281,14 +282,14 @@ public struct PreferencesView: View {
 
                     // Section 3: Permissions
                     VStack(alignment: .leading, spacing: 8) {
-                        sectionLabel(title: "系统权限 (Permissions)", icon: "lock.shield")
+                        sectionLabel(title: L10n.tr("preferences.section.permissions"), icon: "lock.shield")
 
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(alignment: .center, spacing: 12) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("辅助功能 (Accessibility)")
+                                    Text(L10n.tr("preferences.accessibility"))
                                         .font(.body.weight(.medium))
-                                    Text("直接回贴 (Direct Paste) 依赖辅助功能权限模拟按键")
+                                    Text(L10n.tr("preferences.accessibility_desc"))
                                         .font(.footnote)
                                         .foregroundColor(.secondary)
                                 }
@@ -299,7 +300,7 @@ public struct PreferencesView: View {
                                     HStack(spacing: 5) {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundColor(.green)
-                                        Text("已授权")
+                                        Text(L10n.tr("preferences.authorized"))
                                             .font(.subheadline.weight(.semibold))
                                             .foregroundColor(.green)
                                     }
@@ -313,7 +314,7 @@ public struct PreferencesView: View {
                                         HStack(spacing: 4) {
                                             Image(systemName: "exclamationmark.triangle.fill")
                                                 .foregroundColor(.orange)
-                                            Text("前往授权")
+                                            Text(L10n.tr("preferences.grant_permission"))
                                         }
                                     }
                                     .buttonStyle(.borderedProminent)
@@ -327,7 +328,7 @@ public struct PreferencesView: View {
 
                     // Section 4: Support & Community
                     VStack(alignment: .leading, spacing: 8) {
-                        sectionLabel(title: "支持与互动 (Support & Community)", icon: "heart.circle")
+                        sectionLabel(title: L10n.tr("preferences.section.support"), icon: "heart.circle")
 
                         VStack(alignment: .leading, spacing: 12) {
                             // 打赏开发者引导栏
@@ -337,10 +338,10 @@ public struct PreferencesView: View {
                                         Image(systemName: "cup.and.saucer.fill")
                                             .foregroundColor(.orange)
                                             .font(.system(size: 13))
-                                        Text("支持独立开发")
+                                        Text(L10n.tr("preferences.support_dev"))
                                             .font(.body.weight(.medium))
                                     }
-                                    Text("简贴为独立开发开源项目，期待你的鼓励与支持")
+                                    Text(L10n.tr("preferences.support_dev_desc"))
                                         .font(.footnote)
                                         .foregroundColor(.secondary)
                                 }
@@ -356,7 +357,7 @@ public struct PreferencesView: View {
                                         Image(systemName: "heart.fill")
                                             .foregroundColor(.pink)
                                             .font(.system(size: 11))
-                                        Text("打赏开发者")
+                                        Text(L10n.tr("preferences.donate_button"))
                                             .font(.subheadline.weight(.semibold))
                                     }
                                     .padding(.horizontal, 10)
@@ -364,7 +365,7 @@ public struct PreferencesView: View {
                                     .liquidGlassBadge(isCapsule: true, tintColor: .pink)
                                 }
                                 .buttonStyle(.plain)
-                                .help("打开打赏支持二维码弹窗")
+                                .help(L10n.tr("preferences.donate_tooltip"))
                             }
 
                             Divider()
@@ -394,13 +395,13 @@ public struct PreferencesView: View {
             }
         }
         .animation(.spring(response: 0.28, dampingFraction: 0.8), value: showDonationModal)
-        .alert("确定要清空所有剪贴板历史吗？", isPresented: $viewModel.showClearConfirmationAlert) {
-            Button("清空全部记录", role: .destructive) {
+        .alert(L10n.tr("preferences.clear_alert_title"), isPresented: $viewModel.showClearConfirmationAlert) {
+            Button(L10n.tr("preferences.clear_alert_confirm"), role: .destructive) {
                 viewModel.confirmClearClipboardHistory()
             }
-            Button("取消", role: .cancel) {}
+            Button(L10n.tr("preferences.clear_alert_cancel"), role: .cancel) {}
         } message: {
-            Text("此操作将完全清除内存与磁盘中的所有剪贴板历史记录及图片缓存，且不可撤销。")
+            Text(L10n.tr("preferences.clear_alert_message"))
         }
         .onAppear {
             viewModel.refreshStatus()

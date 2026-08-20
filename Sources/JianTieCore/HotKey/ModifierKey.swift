@@ -27,8 +27,8 @@ public enum ModifierKey: String, Codable, Equatable, Hashable, Sendable, CaseIte
         }
     }
 
-    /// 双击文本显示 (如 "双击 ⌘")
+    /// 双击文本显示 (如 "双击 ⌘" / "Double-Tap ⌘")
     public var doubleTapTitle: String {
-        return "双击 \(symbol)"
+        return L10n.tr("hotkey.double_tap", symbol)
     }
 }

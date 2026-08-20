@@ -50,7 +50,7 @@ public enum StatusBarIcon {
         }
 
         image.isTemplate = true
-        image.accessibilityDescription = "简贴"
+        image.accessibilityDescription = L10n.tr("preferences.app_name")
         return image
     }
 }

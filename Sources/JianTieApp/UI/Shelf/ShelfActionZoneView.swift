@@ -4,6 +4,7 @@ import JianTieCore
 
 /// Shelf 底部快捷动作区视图（垂直堆叠：上方 AirDrop，下方 Copy Path）
 public struct ShelfActionZoneView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     @ObservedObject public var engine: ShelfEngine
 
     @State private var isAirDropTargeted: Bool = false
@@ -33,7 +34,7 @@ public struct ShelfActionZoneView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(isAirDropTargeted ? .accentColor : .primary)
 
-            Text("AirDrop")
+            Text(L10n.tr("shelf.action_airdrop"))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(isAirDropTargeted ? .accentColor : .primary)
         }
@@ -77,7 +78,7 @@ public struct ShelfActionZoneView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(isCopyPathTargeted ? .accentColor : .primary)
 
-                Text("Copy Path")
+                Text(L10n.tr("shelf.action_copy_path"))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(isCopyPathTargeted ? .accentColor : .primary)
             }

@@ -4,6 +4,7 @@ import JianTieCore
 
 /// 剪贴板历史记录项卡片视图
 public struct ClipboardItemCardView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     public let item: ClipboardItem
     public let isSelected: Bool
     public let onSelect: () -> Void
@@ -65,7 +66,7 @@ public struct ClipboardItemCardView: View {
                     .background(Circle().fill(Color.primary.opacity(0.1)))
             }
             .buttonStyle(.plain)
-            .help("从历史中删除")
+            .help(L10n.tr("clipboard.delete_item"))
             .opacity(isHovered ? 1.0 : 0.0)
             .disabled(!isHovered)
             .animation(.easeInOut(duration: 0.15), value: isHovered)
@@ -92,9 +93,9 @@ public struct ClipboardItemCardView: View {
         switch item.content {
         case .text(let text):
             if text.rtfData != nil || text.htmlData != nil {
-                badgeText("富文本")
+                badgeText(L10n.tr("clipboard.rich_text"))
             }
-            badgeText("\(text.plainText.count) 字符")
+            badgeText(L10n.tr("clipboard.characters_count", text.plainText.count))
         case .image(let image):
             badgeText(image.format.uppercased())
             if let nsImage = NSImage(data: image.imageData) {
@@ -153,7 +154,7 @@ public struct ClipboardItemCardView: View {
                 }
                 .padding(.vertical, 4)
             } else {
-                Text("无法解析的图片数据")
+                Text(L10n.tr("clipboard.invalid_image_data"))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -163,11 +164,11 @@ public struct ClipboardItemCardView: View {
     private func timeAgoFormatted(_ date: Date) -> String {
         let interval = Int(Date().timeIntervalSince(date))
         if interval < 60 {
-            return "刚刚"
+            return L10n.tr("time.just_now")
         } else if interval < 3600 {
-            return "\(max(1, interval / 60)) 分钟前"
+            return L10n.tr("time.minutes_ago", max(1, interval / 60))
         } else if interval < 86400 {
-            return "\(interval / 3600) 小时前"
+            return L10n.tr("time.hours_ago", interval / 3600)
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "MM-dd HH:mm"

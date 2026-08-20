@@ -24,7 +24,7 @@ public struct ShelfStack: Identifiable, Equatable, Hashable, Sendable {
     /// 卡片展示主标题
     public var title: String {
         guard let first = files.first else {
-            return "空"
+            return L10n.tr("shelf.empty")
         }
         if files.count == 1 {
             return first.fileName

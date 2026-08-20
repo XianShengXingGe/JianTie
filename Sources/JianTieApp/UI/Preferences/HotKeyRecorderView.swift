@@ -4,6 +4,7 @@ import JianTieCore
 
 /// Liquid Glass 风格的全局快捷键交互录制与预设切换组件
 public struct HotKeyRecorderView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     @ObservedObject public var viewModel: HotKeyRecorderViewModel
     @State private var isHovered: Bool = false
     @State private var isPulsing: Bool = false
@@ -30,7 +31,7 @@ public struct HotKeyRecorderView: View {
                                 .scaleEffect(isPulsing ? 1.25 : 0.85)
                                 .opacity(isPulsing ? 1.0 : 0.5)
 
-                            Text("请按下快捷键...")
+                            Text(L10n.tr("hotkey.recording_placeholder"))
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.accentColor)
                         } else {
@@ -55,7 +56,7 @@ public struct HotKeyRecorderView: View {
                 .onHover { hovering in
                     isHovered = hovering
                 }
-                .help(viewModel.isRecording ? "请直接在键盘上按下组合键 (Esc 取消, Delete 恢复默认)" : "点击录制新快捷键")
+                .help(viewModel.isRecording ? L10n.tr("hotkey.recording_help") : L10n.tr("hotkey.click_to_record"))
                 .onChange(of: viewModel.isRecording) { recording in
                     if recording {
                         withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
@@ -83,13 +84,13 @@ public struct HotKeyRecorderView: View {
                             .background(Circle().fill(Color.primary.opacity(0.06)))
                     }
                     .buttonStyle(.plain)
-                    .help("恢复为默认快捷键 (双击 ⌘)")
+                    .help(L10n.tr("hotkey.reset_to_default_help"))
                     .transition(.scale.combined(with: .opacity))
                 }
 
                 // 3. 预设修饰键与快捷选项下拉菜单
                 Menu {
-                    Section("常用双击修饰键") {
+                    Section(L10n.tr("hotkey.section_double_tap")) {
                         ForEach(ModifierKey.allCases, id: \.self) { modifier in
                             Button(action: {
                                 withAnimation(.easeInOut(duration: 0.15)) {
@@ -107,13 +108,13 @@ public struct HotKeyRecorderView: View {
 
                     Divider()
 
-                    Button("录制自定义快捷键...") {
+                    Button(L10n.tr("hotkey.record_custom")) {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             viewModel.startRecording()
                         }
                     }
 
-                    Button("恢复默认快捷键 (双击 ⌘)") {
+                    Button(L10n.tr("hotkey.restore_default")) {
                         withAnimation(.easeInOut(duration: 0.15)) {
                             viewModel.resetToDefault()
                         }
@@ -128,7 +129,7 @@ public struct HotKeyRecorderView: View {
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
-                .help("快捷键选项与双击预设")
+                .help(L10n.tr("hotkey.options_menu_help"))
             }
 
             // 4. 校验错误提示条

@@ -4,6 +4,7 @@ import JianTieCore
 
 /// 开发者打赏 Liquid Glass 弹窗
 public struct DonationModalView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     @Binding public var isPresented: Bool
     @State private var selectedChannel: DonationChannel = .alipay
     @State private var wechatImage: NSImage?
@@ -34,11 +35,11 @@ public struct DonationModalView: View {
                                 .foregroundColor(.orange)
                                 .font(.system(size: 16, weight: .bold))
 
-                            Text("请开发者喝杯咖啡")
+                            Text(L10n.tr("donation.modal_title"))
                                 .font(.headline.weight(.bold))
                         }
 
-                        Text("如果简贴提升了你的效率，欢迎打赏支持持续维护与迭代 ☕️")
+                        Text(L10n.tr("donation.modal_subtitle"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -56,7 +57,7 @@ public struct DonationModalView: View {
                             .foregroundColor(.secondary.opacity(0.8))
                     }
                     .buttonStyle(.plain)
-                    .help("关闭 (ESC)")
+                    .help(L10n.tr("donation.close_tooltip"))
                 }
 
                 // 支付渠道切换 Tab
@@ -108,11 +109,11 @@ public struct DonationModalView: View {
                                 .font(.system(size: 44))
                                 .foregroundColor(.secondary.opacity(0.6))
 
-                            Text("\(selectedChannel.title)收款码筹备中")
+                            Text(L10n.tr("donation.qr_preparing", selectedChannel.title))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundColor(.primary.opacity(0.8))
 
-                            Text("当前通道暂未配置二维码图片，欢迎切换至【\(otherChannel.title)】进行支持。")
+                            Text(L10n.tr("donation.qr_placeholder_desc", otherChannel.title))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
@@ -123,7 +124,7 @@ public struct DonationModalView: View {
                                     selectedChannel = otherChannel
                                 }
                             }) {
-                                Text("切换至 \(otherChannel.title)")
+                                Text(L10n.tr("donation.switch_to_channel", otherChannel.title))
                                     .font(.caption.weight(.semibold))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 5)
@@ -147,7 +148,7 @@ public struct DonationModalView: View {
                         .font(.system(size: 11))
                         .foregroundColor(.pink)
 
-                    Text("感谢每一位用户的信任与支持")
+                    Text(L10n.tr("donation.thank_you"))
                         .font(.system(size: 11, weight: .regular))
                         .foregroundColor(.secondary)
                 }

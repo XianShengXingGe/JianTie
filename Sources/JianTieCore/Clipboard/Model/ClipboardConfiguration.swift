@@ -13,12 +13,12 @@ public enum ClipboardCapacityLimit: Int, CaseIterable, Identifiable, Codable, Se
 
     public var title: String {
         switch self {
-        case .count50: return "50 条"
-        case .count100: return "100 条"
-        case .count300: return "300 条"
-        case .count500: return "500 条"
-        case .count1000: return "1000 条"
-        case .unlimited: return "无限制"
+        case .count50: return L10n.tr("capacity.count50")
+        case .count100: return L10n.tr("capacity.count100")
+        case .count300: return L10n.tr("capacity.count300")
+        case .count500: return L10n.tr("capacity.count500")
+        case .count1000: return L10n.tr("capacity.count1000")
+        case .unlimited: return L10n.tr("capacity.unlimited")
         }
     }
 
@@ -40,12 +40,12 @@ public enum ClipboardRetentionPeriod: Int, CaseIterable, Identifiable, Codable, 
 
     public var title: String {
         switch self {
-        case .days3: return "3 天"
-        case .days7: return "7 天"
-        case .days30: return "30 天"
-        case .days90: return "90 天"
-        case .days180: return "180 天"
-        case .unlimited: return "永久保留"
+        case .days3: return L10n.tr("retention.days3")
+        case .days7: return L10n.tr("retention.days7")
+        case .days30: return L10n.tr("retention.days30")
+        case .days90: return L10n.tr("retention.days90")
+        case .days180: return L10n.tr("retention.days180")
+        case .unlimited: return L10n.tr("retention.unlimited")
         }
     }
 

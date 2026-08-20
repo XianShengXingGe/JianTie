@@ -7,8 +7,7 @@ public extension Notification.Name {
 }
 
 /// 集中化多语言管理服务，管理当前生效语言并提供实时动态本地化字符串解析
-@MainActor
-public final class LocalizationManager: ObservableObject {
+public final class LocalizationManager: ObservableObject, @unchecked Sendable {
     public static let shared = LocalizationManager()
 
     @Published public private(set) var currentLanguage: AppLanguage
@@ -16,13 +15,14 @@ public final class LocalizationManager: ObservableObject {
 
     private let preferences: PreferencesProviding
     private let baseBundle: Bundle
-    private let preferredLanguagesProvider: () -> [String]
+    private let preferredLanguagesProvider: @Sendable () -> [String]
+    private let lock = NSLock()
     private var activeBundle: Bundle?
 
     public init(
         preferences: PreferencesProviding = UserDefaultsPreferences.shared,
         baseBundle: Bundle? = nil,
-        preferredLanguagesProvider: @escaping () -> [String] = { Locale.preferredLanguages }
+        preferredLanguagesProvider: @escaping @Sendable () -> [String] = { Locale.preferredLanguages }
     ) {
         let bundle = baseBundle ?? Bundle.module
         self.preferences = preferences
@@ -37,6 +37,7 @@ public final class LocalizationManager: ObservableObject {
     }
 
     /// 切换应用界面语言，并即时同步到偏好持久化与广播通知
+    @MainActor
     public func setLanguage(_ language: AppLanguage) {
         guard currentLanguage != language else { return }
         self.currentLanguage = language
@@ -44,7 +45,10 @@ public final class LocalizationManager: ObservableObject {
 
         let effective = language.resolveEffectiveLanguage(preferredLanguages: preferredLanguagesProvider())
         self.effectiveLanguage = effective
+        
+        lock.lock()
         self.activeBundle = Self.loadSubBundle(for: effective, in: baseBundle)
+        lock.unlock()
 
         NotificationCenter.default.post(
             name: .appLanguageDidChange,
@@ -58,7 +62,11 @@ public final class LocalizationManager: ObservableObject {
 
     /// 获取指定 Key 的本地化文案，支持未命中时回退到默认语言及原始 Key
     public func string(forKey key: String, comment: String = "") -> String {
-        if let bundle = activeBundle {
+        lock.lock()
+        let currentSubBundle = activeBundle
+        lock.unlock()
+
+        if let bundle = currentSubBundle {
             let localized = bundle.localizedString(forKey: key, value: "###_NOT_FOUND_###", table: nil)
             if localized != "###_NOT_FOUND_###" {
                 return localized
@@ -92,7 +100,6 @@ public final class LocalizationManager: ObservableObject {
 
 /// 快速本地化访问门面
 public enum L10n {
-    @MainActor
     public static func tr(_ key: String, _ args: CVarArg...) -> String {
         if args.isEmpty {
             return LocalizationManager.shared.string(forKey: key)

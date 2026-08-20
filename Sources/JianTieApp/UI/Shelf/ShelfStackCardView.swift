@@ -4,6 +4,7 @@ import JianTieCore
 
 /// 单个 Stack 暂存卡片视图
 public struct ShelfStackCardView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     public let stack: ShelfStack
     public let isDragging: Bool
     public let onDiscard: () -> Void
@@ -92,14 +93,14 @@ public struct ShelfStackCardView: View {
 
     private var formattedFileSize: String {
         guard stack.totalSize > 0 else {
-            return stack.count > 1 ? "\(stack.count) 个文件" : "文件"
+            return stack.count > 1 ? L10n.tr("shelf.files_count", stack.count) : L10n.tr("shelf.file")
         }
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useAll]
         formatter.countStyle = .file
         let sizeStr = formatter.string(fromByteCount: stack.totalSize)
         if stack.count > 1 {
-            return "\(stack.count) 个文件 · \(sizeStr)"
+            return L10n.tr("shelf.files_count_with_size", stack.count, sizeStr)
         }
         return sizeStr
     }

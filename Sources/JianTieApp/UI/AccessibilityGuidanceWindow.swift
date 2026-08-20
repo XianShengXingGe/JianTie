@@ -4,6 +4,7 @@ import JianTieCore
 
 /// 辅助功能授权引导 SwiftUI 视图
 public struct AccessibilityGuidanceView: View {
+    @ObservedObject private var l10n = LocalizationManager.shared
     public let permissionService: AccessibilityPermissionProviding
     public let onDismiss: () -> Void
 
@@ -30,10 +31,10 @@ public struct AccessibilityGuidanceView: View {
             }
 
             VStack(spacing: 8) {
-                Text("简贴 需要辅助功能权限")
+                Text(L10n.tr("accessibility.guidance_title"))
                     .font(.headline.weight(.semibold))
 
-                Text("为了支持直接回贴（Direct Paste）将内容快速粘贴到目标应用，简贴需要系统「辅助功能」权限。")
+                Text(L10n.tr("accessibility.guidance_desc"))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -42,13 +43,13 @@ public struct AccessibilityGuidanceView: View {
             .padding(.horizontal, 8)
 
             HStack(spacing: 12) {
-                Button("稍后再说") {
+                Button(L10n.tr("accessibility.button_later")) {
                     onDismiss()
                 }
                 .keyboardShortcut(.cancelAction)
                 .buttonStyle(.bordered)
 
-                Button("前往系统设置授权") {
+                Button(L10n.tr("accessibility.button_open_settings")) {
                     permissionService.promptForPermission()
                     permissionService.openSystemAccessibilitySettings()
                     onDismiss()
@@ -75,7 +76,7 @@ public final class AccessibilityGuidanceWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "简贴 权限引导"
+        window.title = L10n.tr("accessibility.guidance_window_title")
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isOpaque = false
