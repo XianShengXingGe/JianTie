@@ -169,6 +169,9 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
 
     /// 执行 220ms ease-in 平滑收起隐藏动效
     public func hideWithAnimation(hiddenFrame: CGRect) {
+        ShelfHoverPopoverController.shared.hidePopover(animated: false)
+        ShelfQuickLookController.shared.stopHoverKeyMonitoring(closePreviewIfOpen: true)
+
         guard let window = self.window, window.isVisible else { return }
 
         NSAnimationContext.runAnimationGroup({ context in

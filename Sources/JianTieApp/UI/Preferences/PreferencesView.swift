@@ -5,6 +5,7 @@ import JianTieCore
 /// 偏好设置 SwiftUI 主视图
 public struct PreferencesView: View {
     @ObservedObject public var viewModel: PreferencesViewModel
+    @State private var showDonationModal: Bool = false
 
     public init(viewModel: PreferencesViewModel) {
         self.viewModel = viewModel
@@ -232,13 +233,76 @@ public struct PreferencesView: View {
                         .padding(14)
                         .liquidGlassSection(cornerRadius: 12)
                     }
+
+                    // Section 4: Support & Community
+                    VStack(alignment: .leading, spacing: 8) {
+                        sectionLabel(title: "支持与互动 (Support & Community)", icon: "heart.circle")
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            // 打赏开发者引导栏
+                            HStack(alignment: .center, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "cup.and.saucer.fill")
+                                            .foregroundColor(.orange)
+                                            .font(.system(size: 13))
+                                        Text("支持独立开发")
+                                            .font(.body.weight(.medium))
+                                    }
+                                    Text("简贴为独立开发开源项目，期待你的鼓励与支持")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                }
+
+                                Spacer()
+
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
+                                        showDonationModal = true
+                                    }
+                                }) {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: "heart.fill")
+                                            .foregroundColor(.pink)
+                                            .font(.system(size: 11))
+                                        Text("打赏开发者")
+                                            .font(.subheadline.weight(.semibold))
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .liquidGlassBadge(isCapsule: true, tintColor: .pink)
+                                }
+                                .buttonStyle(.plain)
+                                .help("打开打赏支持二维码弹窗")
+                            }
+
+                            Divider()
+                                .background(Color.primary.opacity(0.06))
+
+                            // 社交与合作渠道列表
+                            VStack(spacing: 6) {
+                                ForEach(SocialLinkItem.standardItems) { item in
+                                    SocialLinkRow(item: item)
+                                }
+                            }
+                        }
+                        .padding(14)
+                        .liquidGlassSection(cornerRadius: 12)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
             }
         }
-        .frame(width: 480, height: 500)
+        .frame(width: 480, height: 540)
         .liquidGlassPanel(cornerRadius: 18, material: .hudWindow)
+        .overlay {
+            if showDonationModal {
+                DonationModalView(isPresented: $showDonationModal)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+            }
+        }
+        .animation(.spring(response: 0.28, dampingFraction: 0.8), value: showDonationModal)
         .alert("确定要清空所有剪贴板历史吗？", isPresented: $viewModel.showClearConfirmationAlert) {
             Button("清空全部记录", role: .destructive) {
                 viewModel.confirmClearClipboardHistory()

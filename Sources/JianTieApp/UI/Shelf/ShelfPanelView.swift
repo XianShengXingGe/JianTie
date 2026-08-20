@@ -53,6 +53,7 @@ public struct ShelfPanelView: View {
                     ForEach(engine.stacks) { stack in
                         ShelfDraggableStackView(
                             stack: stack,
+                            edge: engine.edge,
                             isDragging: engine.isStackDragging || engine.state.isDragging,
                             onDragStart: {
                                 withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {

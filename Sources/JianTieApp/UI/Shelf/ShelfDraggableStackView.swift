@@ -2,26 +2,30 @@ import SwiftUI
 import AppKit
 import JianTieCore
 
-/// 封装 NSDraggingSource 协议的 AppKit 容器 View，支持将 Stack 完整拖出到外部并精确监听 Drop 结果
+/// 封装 NSDraggingSource 协议的 AppKit 容器 View，支持将 Stack 完整拖出到外部并精确监听 Drop 结果与悬停富信息浮层
 public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
     public var stack: ShelfStack
+    public var edge: ShelfEdge
     public var isDragging: Bool = false
     public var onDragStart: (() -> Void)?
     public var onDragOutEnded: ((Bool) -> Void)?
     public var onDiscard: (() -> Void)?
 
+    private var trackingArea: NSTrackingArea?
     private var initialMouseDownLocation: NSPoint?
     private var isDraggingSessionActive = false
     private var hostingView: NSHostingView<ShelfStackCardView>?
 
     public init(
         stack: ShelfStack,
+        edge: ShelfEdge = .left,
         isDragging: Bool = false,
         onDragStart: (() -> Void)? = nil,
         onDiscard: @escaping () -> Void,
         onDragOutEnded: @escaping (Bool) -> Void
     ) {
         self.stack = stack
+        self.edge = edge
         self.isDragging = isDragging
         self.onDragStart = onDragStart
         self.onDiscard = onDiscard
@@ -37,12 +41,14 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
 
     public func update(
         stack: ShelfStack,
+        edge: ShelfEdge,
         isDragging: Bool,
         onDragStart: (() -> Void)?,
         onDiscard: @escaping () -> Void,
         onDragOutEnded: @escaping (Bool) -> Void
     ) {
         self.stack = stack
+        self.edge = edge
         self.isDragging = isDragging
         self.onDragStart = onDragStart
         self.onDiscard = onDiscard
@@ -52,6 +58,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
             stack: stack,
             isDragging: isDragging,
             onDiscard: { [weak self] in
+                ShelfHoverPopoverController.shared.hidePopover(animated: false)
                 self?.onDiscard?()
             }
         )
@@ -63,6 +70,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
             stack: stack,
             isDragging: isDragging,
             onDiscard: { [weak self] in
+                ShelfHoverPopoverController.shared.hidePopover(animated: false)
                 self?.onDiscard?()
             }
         )
@@ -78,6 +86,46 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
         ])
 
         self.hostingView = host
+    }
+
+    // MARK: - Tracking Area & Hover
+
+    public override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeAlways, .inVisibleRect]
+        let newArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+        addTrackingArea(newArea)
+        self.trackingArea = newArea
+    }
+
+    public override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        guard !isDraggingSessionActive, !isDragging else { return }
+
+        guard let win = self.window else { return }
+        let screenRect = win.convertToScreen(convert(bounds, to: nil))
+        let screen = win.screen.map { ScreenInfo(screen: $0) }
+            ?? ScreenInfo.currentScreens().first
+            ?? ScreenInfo(frame: .zero, visibleFrame: .zero)
+
+        ShelfHoverPopoverController.shared.notifyMouseEnteredCard(
+            stack: stack,
+            cardScreenFrame: screenRect,
+            screen: screen,
+            edge: edge
+        )
+        ShelfQuickLookController.shared.startHoverKeyMonitoring { [weak self] in
+            self?.stack.resolvedURLs ?? []
+        }
+    }
+
+    public override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        ShelfHoverPopoverController.shared.notifyMouseExitedCard()
     }
 
     // MARK: - Mouse & Drag Session
@@ -109,6 +157,9 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
     private func startDragSession(with event: NSEvent) {
         let validURLs = stack.resolvedURLs
         guard !validURLs.isEmpty else { return }
+
+        ShelfHoverPopoverController.shared.notifyDragStarted()
+        ShelfQuickLookController.shared.stopHoverKeyMonitoring()
 
         self.isDraggingSessionActive = true
         onDragStart?()
@@ -143,6 +194,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
 /// SwiftUI 包装器，将 ShelfStackDragHostingView 桥接至 SwiftUI
 public struct ShelfDraggableStackView: NSViewRepresentable {
     public let stack: ShelfStack
+    public let edge: ShelfEdge
     public let isDragging: Bool
     public let onDragStart: (() -> Void)?
     public let onDiscard: () -> Void
@@ -150,12 +202,14 @@ public struct ShelfDraggableStackView: NSViewRepresentable {
 
     public init(
         stack: ShelfStack,
+        edge: ShelfEdge = .left,
         isDragging: Bool = false,
         onDragStart: (() -> Void)? = nil,
         onDiscard: @escaping () -> Void,
         onDragOutEnded: @escaping (Bool) -> Void
     ) {
         self.stack = stack
+        self.edge = edge
         self.isDragging = isDragging
         self.onDragStart = onDragStart
         self.onDiscard = onDiscard
@@ -165,6 +219,7 @@ public struct ShelfDraggableStackView: NSViewRepresentable {
     public func makeNSView(context: Context) -> ShelfStackDragHostingView {
         return ShelfStackDragHostingView(
             stack: stack,
+            edge: edge,
             isDragging: isDragging,
             onDragStart: onDragStart,
             onDiscard: onDiscard,
@@ -175,6 +230,7 @@ public struct ShelfDraggableStackView: NSViewRepresentable {
     public func updateNSView(_ nsView: ShelfStackDragHostingView, context: Context) {
         nsView.update(
             stack: stack,
+            edge: edge,
             isDragging: isDragging,
             onDragStart: onDragStart,
             onDiscard: onDiscard,
@@ -182,3 +238,4 @@ public struct ShelfDraggableStackView: NSViewRepresentable {
         )
     }
 }
+

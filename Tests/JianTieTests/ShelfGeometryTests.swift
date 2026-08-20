@@ -133,4 +133,95 @@ final class ShelfGeometryTests: XCTestCase {
         // hiddenFrame 应在屏幕右侧外部
         XCTAssertEqual(hidden.origin.x, 1940) // 1920 + 20
     }
+
+    // MARK: - Popover Frame Calculation Tests
+
+    func test_calculatePopoverFrame_leftEdge_anchorsToRight() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
+        )
+        let cardFrame = CGRect(x: 8, y: 500, width: 124, height: 52)
+        let popoverSize = CGSize(width: 260, height: 180)
+
+        let frame = calculator.calculatePopoverFrame(
+            cardScreenFrame: cardFrame,
+            popoverSize: popoverSize,
+            screen: screen,
+            edge: .left,
+            spacing: 8.0
+        )
+
+        // 左停靠时向右展开：x = cardFrame.maxX + 8 = 132 + 8 = 140
+        XCTAssertEqual(frame.origin.x, 140.0)
+        // y 居中对齐 cardFrame.midY (526) - 180 / 2 = 436
+        XCTAssertEqual(frame.origin.y, 436.0)
+        XCTAssertEqual(frame.width, 260.0)
+        XCTAssertEqual(frame.height, 180.0)
+    }
+
+    func test_calculatePopoverFrame_rightEdge_anchorsToLeft() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
+        )
+        let cardFrame = CGRect(x: 1788, y: 500, width: 124, height: 52)
+        let popoverSize = CGSize(width: 260, height: 180)
+
+        let frame = calculator.calculatePopoverFrame(
+            cardScreenFrame: cardFrame,
+            popoverSize: popoverSize,
+            screen: screen,
+            edge: .right,
+            spacing: 8.0
+        )
+
+        // 右停靠时向左展开：x = cardFrame.minX - 260 - 8 = 1788 - 268 = 1520
+        XCTAssertEqual(frame.origin.x, 1520.0)
+        XCTAssertEqual(frame.origin.y, 436.0)
+    }
+
+    func test_calculatePopoverFrame_topClamping_doesNotExceedVisibleTop() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055) // maxY = 1080
+        )
+        // 卡片位于屏幕极顶部
+        let cardFrame = CGRect(x: 8, y: 1000, width: 124, height: 52)
+        let popoverSize = CGSize(width: 260, height: 200)
+
+        let frame = calculator.calculatePopoverFrame(
+            cardScreenFrame: cardFrame,
+            popoverSize: popoverSize,
+            screen: screen,
+            edge: .left,
+            spacing: 8.0
+        )
+
+        // 目标 midY = 1026 - 100 = 926. 最大 y = 1080 - 200 - 8 = 872
+        XCTAssertEqual(frame.origin.y, 872.0)
+        XCTAssertEqual(frame.origin.x, 140.0)
+    }
+
+    func test_calculatePopoverFrame_bottomClamping_doesNotExceedVisibleBottom() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055) // minY = 25
+        )
+        // 卡片位于屏幕极底部
+        let cardFrame = CGRect(x: 8, y: 30, width: 124, height: 52)
+        let popoverSize = CGSize(width: 260, height: 200)
+
+        let frame = calculator.calculatePopoverFrame(
+            cardScreenFrame: cardFrame,
+            popoverSize: popoverSize,
+            screen: screen,
+            edge: .left,
+            spacing: 8.0
+        )
+
+        // 目标 midY = 56 - 100 = -44. 最小 y = 25 + 8 = 33
+        XCTAssertEqual(frame.origin.y, 33.0)
+        XCTAssertEqual(frame.origin.x, 140.0)
+    }
 }

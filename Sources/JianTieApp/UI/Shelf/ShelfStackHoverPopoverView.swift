@@ -59,7 +59,7 @@ public struct ShelfStackHoverPopoverView: View {
                     .padding(.vertical, 1.5)
                     .liquidGlassBadge(isCapsule: false, cornerRadius: 4)
 
-                Text("预览 · 拖拽可移出")
+                Text("空格预览 · 拖拽可移出")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
                 Spacer()
@@ -67,8 +67,15 @@ public struct ShelfStackHoverPopoverView: View {
             .padding(.horizontal, 10)
             .padding(.bottom, 8)
         }
-        .frame(width: 240)
+        .frame(width: 260)
         .liquidGlassPanel(cornerRadius: 14, material: .popover)
+        .onHover { isInside in
+            if isInside {
+                ShelfHoverPopoverController.shared.notifyMouseEnteredPopover()
+            } else {
+                ShelfHoverPopoverController.shared.notifyMouseExitedPopover()
+            }
+        }
     }
 
     @ViewBuilder
@@ -79,13 +86,13 @@ public struct ShelfStackHoverPopoverView: View {
             Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 20, height: 20)
+                .frame(width: 22, height: 22)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(fileRef.fileName)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.primary)
-                    .lineLimit(2)
+                    .lineLimit(3)
                     .truncationMode(.middle)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -135,3 +142,4 @@ public struct ShelfStackHoverPopoverView: View {
         return ByteCountFormatter.string(fromByteCount: stack.totalSize, countStyle: .file)
     }
 }
+

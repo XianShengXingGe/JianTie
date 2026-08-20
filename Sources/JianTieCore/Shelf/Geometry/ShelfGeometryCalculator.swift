@@ -111,6 +111,47 @@ public struct ShelfGeometryCalculator: Sendable {
         }
     }
 
+    /// 计算 Shelf 悬浮卡片对应的富信息浮层屏幕坐标
+    /// - Parameters:
+    ///   - cardScreenFrame: 卡片在屏幕坐标系中的 NSRect
+    ///   - popoverSize: 浮层尺寸
+    ///   - screen: 显示器信息
+    ///   - edge: Shelf 停靠边缘
+    ///   - spacing: 浮层与卡片间距（默认 8px）
+    /// - Returns: 浮层在屏幕坐标系中的目标 Frame (自动 clamp 到 screen.visibleFrame 内)
+    public func calculatePopoverFrame(
+        cardScreenFrame: CGRect,
+        popoverSize: CGSize,
+        screen: ScreenInfo,
+        edge: ShelfEdge,
+        spacing: CGFloat = 8.0
+    ) -> CGRect {
+        let visibleBounds = screen.visibleFrame
+
+        // 水平方向：依据边缘智能锚定展开方向
+        let targetX: CGFloat
+        switch edge {
+        case .left:
+            targetX = cardScreenFrame.maxX + spacing
+        case .right:
+            targetX = cardScreenFrame.minX - popoverSize.width - spacing
+        }
+
+        // 垂直方向：以卡片纵向中线为基准居中
+        let targetY = cardScreenFrame.midY - popoverSize.height / 2
+
+        // 智能边界保护：确保浮层完整落在屏幕可视工作区 (visibleFrame) 内
+        let minX = visibleBounds.minX + spacing
+        let maxX = max(minX, visibleBounds.maxX - popoverSize.width - spacing)
+        let clampedX = min(max(targetX, minX), maxX)
+
+        let minY = visibleBounds.minY + spacing
+        let maxY = max(minY, visibleBounds.maxY - popoverSize.height - spacing)
+        let clampedY = min(max(targetY, minY), maxY)
+
+        return CGRect(x: clampedX, y: clampedY, width: popoverSize.width, height: popoverSize.height)
+    }
+
     private func distance(from point: CGPoint, to rect: CGRect) -> CGFloat {
         let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
         let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
