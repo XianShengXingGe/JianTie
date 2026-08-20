@@ -48,7 +48,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let preferencesViewModel = PreferencesViewModel(
             preferences: UserDefaultsPreferences.shared,
             accessibilityService: AccessibilityPermissionService.shared,
-            shelfEngine: coordinator.shelfEngine
+            shelfEngine: coordinator.shelfEngine,
+            clipboardEngine: coordinator.clipboardEngine
         )
         let preferencesController = PreferencesWindowController(viewModel: preferencesViewModel)
 

@@ -17,7 +17,7 @@ public final class ClipboardEngine: ObservableObject {
     ) {
         self.pasteboard = pasteboard
         self.storage = storage
-        self.items = (try? storage.load()) ?? []
+        self.items = (try? storage.prune()) ?? (try? storage.load()) ?? []
 
         final class HandlerBox: @unchecked Sendable {
             var handler: (@Sendable (ClipboardItem) -> Void)?
@@ -64,8 +64,16 @@ public final class ClipboardEngine: ObservableObject {
         } catch {
             // 如果存储失败，仍更新内存状态以保证当次会话一致
             var current = items
+            current.removeAll { $0.content.isContentEqual(to: item.content) }
             current.insert(item, at: 0)
             self.items = current
+        }
+    }
+
+    /// 执行剪贴板历史容量与生命周期修剪
+    public func pruneHistory(now: Date = Date()) {
+        if let updatedList = try? storage.prune(now: now) {
+            self.items = updatedList
         }
     }
 

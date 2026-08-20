@@ -120,19 +120,68 @@ public struct PreferencesView: View {
                             Divider()
                                 .background(Color.primary.opacity(0.06))
 
-                            HStack(alignment: .top) {
-                                Text("历史容量策略")
+                            HStack(alignment: .center) {
+                                Text("历史容量上限")
                                     .font(.body)
                                 Spacer()
-                                Text("最多 1000 条 (FIFO 淘汰)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                Picker("", selection: Binding(
+                                    get: { viewModel.clipboardCapacityLimit },
+                                    set: { viewModel.setClipboardCapacityLimit($0) }
+                                )) {
+                                    ForEach(ClipboardCapacityLimit.allCases) { limit in
+                                        Text(limit.title).tag(limit)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .frame(width: 120)
+                            }
+
+                            HStack(alignment: .center) {
+                                Text("保存过期周期")
+                                    .font(.body)
+                                Spacer()
+                                Picker("", selection: Binding(
+                                    get: { viewModel.clipboardRetentionPeriod },
+                                    set: { viewModel.setClipboardRetentionPeriod($0) }
+                                )) {
+                                    ForEach(ClipboardRetentionPeriod.allCases) { period in
+                                        Text(period.title).tag(period)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .frame(width: 120)
                             }
 
                             Text(viewModel.clipboardRetentionDescription)
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
+
+                            Divider()
+                                .background(Color.primary.opacity(0.06))
+
+                            HStack(alignment: .center) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("清空历史记录")
+                                        .font(.body)
+                                    Text("完全清除所有剪贴板记录与本地图片缓存")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                }
+
+                                Spacer()
+
+                                Button(role: .destructive, action: {
+                                    viewModel.showClearConfirmationAlert = true
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "trash")
+                                        Text("清空剪贴板内容")
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
                         }
                         .padding(14)
                         .liquidGlassSection(cornerRadius: 12)
@@ -188,8 +237,16 @@ public struct PreferencesView: View {
                 .padding(.vertical, 16)
             }
         }
-        .frame(width: 480, height: 430)
+        .frame(width: 480, height: 500)
         .liquidGlassPanel(cornerRadius: 18, material: .hudWindow)
+        .alert("确定要清空所有剪贴板历史吗？", isPresented: $viewModel.showClearConfirmationAlert) {
+            Button("清空全部记录", role: .destructive) {
+                viewModel.confirmClearClipboardHistory()
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("此操作将完全清除内存与磁盘中的所有剪贴板历史记录及图片缓存，且不可撤销。")
+        }
         .onAppear {
             viewModel.refreshAccessibilityStatus()
         }

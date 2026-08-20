@@ -10,9 +10,16 @@ private final class MockPasteboardReader: PasteboardProviding, @unchecked Sendab
     }
 }
 
+private final class EngineTestPreferences: PreferencesProviding, @unchecked Sendable {
+    var shelfEdge: ShelfEdge = .left
+    var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
+    var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
+}
+
 @MainActor
 final class ClipboardEngineTests: XCTestCase {
     private var tempDirectoryURL: URL!
+    private var testPreferences: EngineTestPreferences!
     private var storage: FileClipboardStorage!
     private var mockPasteboard: MockPasteboardReader!
 
@@ -21,7 +28,8 @@ final class ClipboardEngineTests: XCTestCase {
         tempDirectoryURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("JianTieEngineTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDirectoryURL, withIntermediateDirectories: true)
-        storage = FileClipboardStorage(baseDirectoryURL: tempDirectoryURL, maxCapacity: 100)
+        testPreferences = EngineTestPreferences()
+        storage = FileClipboardStorage(baseDirectoryURL: tempDirectoryURL, preferences: testPreferences)
         mockPasteboard = MockPasteboardReader()
     }
 
@@ -96,6 +104,67 @@ final class ClipboardEngineTests: XCTestCase {
         let storedItems = (try? storage.load()) ?? []
         XCTAssertEqual(storedItems.count, 1)
         XCTAssertEqual(storedItems.first?.plainTextSummary, "Captured Stream Text")
+    }
+
+    func test_engine_capturedDuplicateItem_deduplicatesAndPrepends() {
+        let engine = ClipboardEngine(
+            pasteboard: mockPasteboard,
+            storage: storage,
+            autoStart: false
+        )
+
+        mockPasteboard.changeCount = 1
+        mockPasteboard.stubbedItem = .text(ClipboardTextContent(plainText: "Text A"))
+        engine.monitor.checkPasteboard()
+
+        mockPasteboard.changeCount = 2
+        mockPasteboard.stubbedItem = .text(ClipboardTextContent(plainText: "Text B"))
+        engine.monitor.checkPasteboard()
+
+        XCTAssertEqual(engine.items.count, 2)
+        XCTAssertEqual(engine.items[0].plainTextSummary, "Text B")
+        XCTAssertEqual(engine.items[1].plainTextSummary, "Text A")
+
+        // Capture Text A again
+        mockPasteboard.changeCount = 3
+        mockPasteboard.stubbedItem = .text(ClipboardTextContent(plainText: "Text A"))
+        engine.monitor.checkPasteboard()
+
+        XCTAssertEqual(engine.items.count, 2)
+        XCTAssertEqual(engine.items[0].plainTextSummary, "Text A")
+        XCTAssertEqual(engine.items[1].plainTextSummary, "Text B")
+    }
+
+    func test_engine_pruneHistory_removesExpiredItems() throws {
+        testPreferences.clipboardRetentionPeriod = .days3
+        let now = Date()
+        let dayInSeconds: TimeInterval = 86400
+
+        let expiredItem = ClipboardItem(
+            timestamp: now.addingTimeInterval(-4 * dayInSeconds),
+            content: .text(ClipboardTextContent(plainText: "Old Item"))
+        )
+        let validItem = ClipboardItem(
+            timestamp: now.addingTimeInterval(-1 * dayInSeconds),
+            content: .text(ClipboardTextContent(plainText: "New Item"))
+        )
+
+        try storage.save(items: [validItem, expiredItem])
+
+        let engine = ClipboardEngine(
+            pasteboard: mockPasteboard,
+            storage: storage,
+            autoStart: false
+        )
+
+        // Engine pruned on startup and pruneHistory keeps only validItem
+        XCTAssertEqual(engine.items.count, 1)
+        XCTAssertEqual(engine.items.first?.id, validItem.id)
+
+        engine.pruneHistory(now: now)
+
+        XCTAssertEqual(engine.items.count, 1)
+        XCTAssertEqual(engine.items.first?.id, validItem.id)
     }
 
     func test_engine_deleteItem_updatesStorageAndItems() throws {

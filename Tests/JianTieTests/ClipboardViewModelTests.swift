@@ -196,6 +196,10 @@ private final class MockClipboardStorage: ClipboardStorageProviding, @unchecked 
         return storedItems
     }
 
+    func prune(now: Date) throws -> [ClipboardItem] {
+        return storedItems
+    }
+
     func clear() throws {
         storedItems.removeAll()
     }

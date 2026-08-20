@@ -3,7 +3,7 @@ import Foundation
 /// 基于本地文件系统的剪贴板持久化存储
 public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked Sendable {
     public let baseDirectoryURL: URL
-    public let maxCapacity: Int
+    public let preferences: PreferencesProviding
 
     private let fileManager = FileManager.default
     private let lock = NSRecursiveLock()
@@ -20,10 +20,10 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
 
     public init(
         baseDirectoryURL: URL = FileClipboardStorage.defaultStorageDirectoryURL,
-        maxCapacity: Int = 1000
+        preferences: PreferencesProviding = UserDefaultsPreferences.shared
     ) {
         self.baseDirectoryURL = baseDirectoryURL
-        self.maxCapacity = maxCapacity
+        self.preferences = preferences
         self.jsonEncoder.outputFormatting = [.prettyPrinted]
         ensureDirectoryStructure()
     }
@@ -88,11 +88,10 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
 
         ensureDirectoryStructure()
 
-        // 保持容量限制与淘汰
         var recordsToSave: [PersistedRecord] = []
         var preservedImageIDs = Set<UUID>()
 
-        for item in items.prefix(maxCapacity) {
+        for item in items {
             switch item.content {
             case .text(let text):
                 recordsToSave.append(PersistedRecord(
@@ -122,7 +121,7 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
             }
         }
 
-        // 清理被 FIFO 淘汰或已被移除的图片文件
+        // 清理被 FIFO 淘汰、超期修剪或去重移除的孤儿图片文件
         if let existingImageFiles = try? fileManager.contentsOfDirectory(atPath: imagesDirectoryURL.path) {
             for fileName in existingImageFiles {
                 let fileUUIDString = (fileName as NSString).deletingPathExtension
@@ -143,13 +142,17 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
         defer { lock.unlock() }
 
         var currentItems = try load()
-        // 新记录插入最前（时间倒序）
+
+        // 智能去重：移除历史中已存在的相同内容记录
+        currentItems.removeAll { existing in
+            existing.content.isContentEqual(to: item.content)
+        }
+
+        // 最新记录置顶插入头部 (index 0)
         currentItems.insert(item, at: 0)
 
-        // 超过上限淘汰最旧数据
-        if currentItems.count > maxCapacity {
-            currentItems = Array(currentItems.prefix(maxCapacity))
-        }
+        // 执行保存周期与容量上限修剪
+        currentItems = pruneItems(currentItems, now: item.timestamp)
 
         try save(items: currentItems)
         return currentItems
@@ -167,6 +170,17 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
         return currentItems
     }
 
+    @discardableResult
+    public func prune(now: Date = Date()) throws -> [ClipboardItem] {
+        lock.lock()
+        defer { lock.unlock() }
+
+        let currentItems = try load()
+        let pruned = pruneItems(currentItems, now: now)
+        try save(items: pruned)
+        return pruned
+    }
+
     public func clear() throws {
         lock.lock()
         defer { lock.unlock() }
@@ -178,5 +192,26 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
             try? fileManager.removeItem(at: imagesDirectoryURL)
         }
         ensureDirectoryStructure()
+    }
+
+    // MARK: - Private Helpers
+
+    private func pruneItems(_ items: [ClipboardItem], now: Date) -> [ClipboardItem] {
+        var result = items
+
+        // 1. 保存周期过期修剪 (Retention Period)
+        if let days = preferences.clipboardRetentionPeriod.days {
+            let cutoffDate = now.addingTimeInterval(-Double(days * 86400))
+            result = result.filter { $0.timestamp >= cutoffDate }
+        }
+
+        // 2. 容量上限修剪 (FIFO Eviction)
+        if let maxCount = preferences.clipboardCapacityLimit.maxCount {
+            if result.count > maxCount {
+                result = Array(result.prefix(maxCount))
+            }
+        }
+
+        return result
     }
 }

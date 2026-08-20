@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-/// 偏好设置视图模型，管理 Shelf 边缘配置、权限状态、剪贴板说明与版本展示
+/// 偏好设置视图模型，管理 Shelf 边缘配置、剪贴板容量生命周期、权限状态与版本展示
 @MainActor
 public final class PreferencesViewModel: ObservableObject {
     @Published public var shelfEdge: ShelfEdge {
@@ -11,24 +11,44 @@ public final class PreferencesViewModel: ObservableObject {
         }
     }
 
+    @Published public var clipboardCapacityLimit: ClipboardCapacityLimit {
+        didSet {
+            preferences.clipboardCapacityLimit = clipboardCapacityLimit
+            clipboardEngine?.pruneHistory()
+        }
+    }
+
+    @Published public var clipboardRetentionPeriod: ClipboardRetentionPeriod {
+        didSet {
+            preferences.clipboardRetentionPeriod = clipboardRetentionPeriod
+            clipboardEngine?.pruneHistory()
+        }
+    }
+
+    @Published public var showClearConfirmationAlert: Bool = false
     @Published public private(set) var isAccessibilityTrusted: Bool
 
     public let preferences: PreferencesProviding
     public let accessibilityService: AccessibilityPermissionProviding
     public weak var shelfEngine: ShelfEngine?
+    public weak var clipboardEngine: ClipboardEngine?
     private let bundle: Bundle
 
     public init(
         preferences: PreferencesProviding = UserDefaultsPreferences.shared,
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
         shelfEngine: ShelfEngine? = nil,
+        clipboardEngine: ClipboardEngine? = nil,
         bundle: Bundle = .main
     ) {
         self.preferences = preferences
         self.accessibilityService = accessibilityService
         self.shelfEngine = shelfEngine
+        self.clipboardEngine = clipboardEngine
         self.bundle = bundle
         self.shelfEdge = preferences.shelfEdge
+        self.clipboardCapacityLimit = preferences.clipboardCapacityLimit
+        self.clipboardRetentionPeriod = preferences.clipboardRetentionPeriod
         self.isAccessibilityTrusted = accessibilityService.isTrusted
     }
 
@@ -44,13 +64,30 @@ public final class PreferencesViewModel: ObservableObject {
 
     /// 剪贴板历史保留容量说明
     public var clipboardRetentionDescription: String {
-        return "完整记录最近 1000 条文本、富文本与图片历史，采用先进先出 (FIFO) 策略自动淘汰，无时间过期限制。"
+        return "支持智能文本与图片 (SHA-256) 去重前置。超出容量将按先进先出 (FIFO) 自动淘汰，超期条目自动修剪。"
     }
 
     /// 切换 Shelf 屏幕停靠边缘
     public func setShelfEdge(_ edge: ShelfEdge) {
         guard self.shelfEdge != edge else { return }
         self.shelfEdge = edge
+    }
+
+    /// 设置剪贴板历史容量上限
+    public func setClipboardCapacityLimit(_ limit: ClipboardCapacityLimit) {
+        guard self.clipboardCapacityLimit != limit else { return }
+        self.clipboardCapacityLimit = limit
+    }
+
+    /// 设置剪贴板历史保存周期
+    public func setClipboardRetentionPeriod(_ period: ClipboardRetentionPeriod) {
+        guard self.clipboardRetentionPeriod != period else { return }
+        self.clipboardRetentionPeriod = period
+    }
+
+    /// 执行清空剪贴板历史操作
+    public func confirmClearClipboardHistory() {
+        clipboardEngine?.clearHistory()
     }
 
     /// 刷新辅助功能授权状态

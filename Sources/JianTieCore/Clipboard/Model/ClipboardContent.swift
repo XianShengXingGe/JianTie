@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 /// 剪贴板文本内容（纯文本及富文本附加格式）
 public struct ClipboardTextContent: Equatable, Sendable, Codable {
@@ -69,6 +70,20 @@ public enum ClipboardContent: Equatable, Sendable, Codable {
         case .image(let image):
             try container.encode(ContentType.image, forKey: .type)
             try container.encode(image, forKey: .imagePayload)
+        }
+    }
+
+    /// 智能内容比对：文本按 plainText 精确比对，图片按 SHA-256 哈希比对
+    public func isContentEqual(to other: ClipboardContent) -> Bool {
+        switch (self, other) {
+        case (.text(let a), .text(let b)):
+            return a.plainText == b.plainText
+        case (.image(let a), .image(let b)):
+            let hashA = SHA256.hash(data: a.imageData)
+            let hashB = SHA256.hash(data: b.imageData)
+            return hashA == hashB
+        default:
+            return false
         }
     }
 }
