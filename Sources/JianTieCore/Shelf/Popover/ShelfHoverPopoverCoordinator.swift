@@ -49,7 +49,7 @@ public final class ShelfHoverPopoverCoordinator: ObservableObject {
     }
 
     /// 鼠标离开卡片，在缓冲时间后若未进入浮层则平滑淡出收起
-    public func notifyMouseExitedCard(gracePeriod: TimeInterval = 0.100) {
+    public func notifyMouseExitedCard(gracePeriod: TimeInterval = 0.180) {
         self.isMouseInCard = false
         hoverShowTask?.cancel()
         hoverShowTask = nil
@@ -65,7 +65,7 @@ public final class ShelfHoverPopoverCoordinator: ObservableObject {
     }
 
     /// 鼠标离开浮层窗口内部
-    public func notifyMouseExitedPopover(gracePeriod: TimeInterval = 0.100) {
+    public func notifyMouseExitedPopover(gracePeriod: TimeInterval = 0.180) {
         self.isMouseInPopover = false
         scheduleHide(gracePeriod: gracePeriod)
     }

@@ -52,7 +52,7 @@ public final class ShelfHoverPopoverController: NSObject, ObservableObject {
         )
     }
 
-    public func notifyMouseExitedCard(gracePeriod: TimeInterval = 0.100) {
+    public func notifyMouseExitedCard(gracePeriod: TimeInterval = 0.180) {
         coordinator.notifyMouseExitedCard(gracePeriod: gracePeriod)
     }
 
@@ -60,7 +60,7 @@ public final class ShelfHoverPopoverController: NSObject, ObservableObject {
         coordinator.notifyMouseEnteredPopover()
     }
 
-    public func notifyMouseExitedPopover(gracePeriod: TimeInterval = 0.100) {
+    public func notifyMouseExitedPopover(gracePeriod: TimeInterval = 0.180) {
         coordinator.notifyMouseExitedPopover(gracePeriod: gracePeriod)
     }
 

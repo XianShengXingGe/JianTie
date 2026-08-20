@@ -92,8 +92,7 @@ public struct ShelfStackHoverPopoverView: View {
                 Text(fileRef.fileName)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.primary)
-                    .lineLimit(3)
-                    .truncationMode(.middle)
+                    .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if fileRef.fileSize > 0 {

@@ -18,7 +18,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
 
     public init(
         stack: ShelfStack,
-        edge: ShelfEdge = .left,
+        edge: ShelfEdge,
         isDragging: Bool = false,
         onDragStart: (() -> Void)? = nil,
         onDiscard: @escaping () -> Void,
@@ -202,7 +202,7 @@ public struct ShelfDraggableStackView: NSViewRepresentable {
 
     public init(
         stack: ShelfStack,
-        edge: ShelfEdge = .left,
+        edge: ShelfEdge,
         isDragging: Bool = false,
         onDragStart: (() -> Void)? = nil,
         onDiscard: @escaping () -> Void,
