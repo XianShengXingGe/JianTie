@@ -9,7 +9,6 @@ DerivedData/
 *.app
 *.dmg
 *.zip
-dist/
 * 2.*
 docs/
 Tests/
@@ -17,7 +16,7 @@ AGENTS.md
 CONTEXT.md
 *需求*.md
 简贴需求文档.md
+HANDOFF*.md
+*交接*.md
 .baoyu-skills/
 image-cards/
-HANDOFF*.md
-handoff*.md
