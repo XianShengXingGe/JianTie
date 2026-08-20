@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/XianShengXingGe/JianTie/releases/latest"><img src="https://img.shields.io/badge/下载最新版-v1.0.1-007AFF.svg" alt="下载最新版: v1.0.1"></a>
+  <a href="https://github.com/XianShengXingGe/JianTie/releases/latest"><img src="https://img.shields.io/badge/下载最新版-v1.1.0-007AFF.svg" alt="下载最新版: v1.1.0"></a>
   <img src="https://img.shields.io/badge/支持系统-macOS%2013%2B-000000.svg" alt="macOS 13+">
   <img src="https://img.shields.io/badge/支持机型-M1~M4%20%2F%20Intel-success.svg" alt="Universal">
   <img src="https://img.shields.io/badge/免费开源-MIT-blue.svg" alt="License: MIT">
@@ -23,7 +23,7 @@
 平时用 Mac 办公、写文档或聊天时，你是否也遇到过这些小烦恼：
 
 - 📁 **拖拽文件找窗口太费劲**：想把桌面文件发给微信好友，需要一手按住鼠标不放，另一只手手忙脚乱切换窗口，中途一松手就前功尽弃。  
-  👉 **简贴帮你**：顺手把文件往屏幕边缘一放即可暂存；切换好窗口后再轻松拖出来，还支持按**空格键**秒开大图预览！
+  👉 **简贴帮你**：顺手把文件往屏幕边缘一放即可暂存；切换好窗口后再轻松拖出来，还支持按**空格键**秒开大图预览与顶部把手**自由吸附拖拽**！
 
 - 📋 **刚复制的内容不小心被覆盖了**：系统自带的剪贴板只能记最后一条，复制了新文字，前面的重要内容就弄丢了。  
   👉 **简贴帮你**：自动记录你复制过的文字、图片和文件；连按两次 **⌘ (Command)** 键随时唤出，选中按回车还能直接帮你自动粘贴！
@@ -39,6 +39,7 @@
 - **放入**：拖动任意文件往屏幕左边（或右边）一靠，边栏自动滑出，松开鼠标就存好了。
 - **看大图**：鼠标停在文件上，按一下 **空格键** 就能直接查看大图和文档。
 - **发送**：打开聊天软件或邮件，直接把文件从边栏拖进去即可。
+- **调整位置**：按住顶部把手即可随意上下拖动并就近贴边吸附。
 - **移除**：点击卡片右上角 ✕，或者把文件拖到边栏下方的红色区域。
 
 ### 2. 剪贴板历史
@@ -50,7 +51,7 @@
 
 ## 📦 下载与安装
 
-1. 点击前往 [**下载页面 (GitHub Releases)**](https://github.com/XianShengXingGe/JianTie/releases/latest)，下载 `JianTie-v1.0.1.dmg`。
+1. 点击前往 [**下载页面 (GitHub Releases)**](https://github.com/XianShengXingGe/JianTie/releases/latest)，下载 `JianTie-v1.1.0.dmg`。
 2. 双击打开安装包，把 **简贴** 图标拖进 **应用程序 (Applications)** 文件夹。
 3. 打开软件，根据提示在 Mac「系统设置 $\rightarrow$ 隐私与安全性 $\rightarrow$ 辅助功能」中勾选允许（用于实现回车自动帮你粘贴）。
 
