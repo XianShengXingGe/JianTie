@@ -232,4 +232,20 @@ final class AppCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(preferencesPresented.value)
     }
+
+    func test_setupStatusItem_configuresStatusBarIconAndMenu() {
+        let dummyItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let coordinator = AppCoordinator(
+            statusItemProvider: { dummyItem }
+        )
+
+        coordinator.setupStatusItem()
+
+        XCTAssertNotNil(coordinator.statusItem)
+        XCTAssertNotNil(coordinator.statusItem?.menu)
+        XCTAssertNotNil(coordinator.statusItem?.button?.image)
+        XCTAssertTrue(coordinator.statusItem?.button?.image?.isTemplate == true)
+        XCTAssertEqual(coordinator.statusItem?.button?.image?.size.width, 18)
+        XCTAssertEqual(coordinator.statusItem?.button?.image?.size.height, 18)
+    }
 }

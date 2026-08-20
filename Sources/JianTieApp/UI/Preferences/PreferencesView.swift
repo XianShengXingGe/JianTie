@@ -14,16 +14,25 @@ public struct PreferencesView: View {
         VStack(spacing: 0) {
             // Header / App Info
             HStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(Color.accentColor.opacity(0.12))
-                        .frame(width: 48, height: 48)
-
-                    Image(systemName: "paperclip.circle.fill")
+                if let appIcon = AppIconProvider.loadAppIcon() {
+                    Image(nsImage: appIcon)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 44, height: 44)
-                        .foregroundColor(.accentColor)
+                        .frame(width: 48, height: 48)
+                        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1)
+                } else {
+                    ZStack {
+                        Circle()
+                            .fill(Color.accentColor.opacity(0.12))
+                            .frame(width: 48, height: 48)
+
+                        Image(systemName: "tray.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(.accentColor)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 3) {

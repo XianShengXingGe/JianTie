@@ -89,12 +89,7 @@ public final class AppCoordinator: NSObject {
 
         if let item = statusItemProvider() {
             if let button = item.button {
-                if let image = NSImage(systemSymbolName: "paperclip", accessibilityDescription: "简贴") {
-                    image.isTemplate = true
-                    button.image = image
-                } else {
-                    button.title = "简"
-                }
+                button.image = StatusBarIcon.createTemplateImage()
             }
             item.menu = menuBuilder.buildMenu(
                 target: self,

@@ -12,6 +12,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         // 配置为 Menu Bar Agent (不在 Dock 和 ⌘Tab 切换器中出现)
         NSApp.setActivationPolicy(.accessory)
 
+        // 配置应用品牌图标 (支持 SPM 模块资源与 App Bundle 资源加载)
+        if let icon = AppIconProvider.loadAppIcon() {
+            NSApp.applicationIconImage = icon
+        }
+
         let coordinator = AppCoordinator(
             accessibilityService: AccessibilityPermissionService.shared,
             menuBuilder: StatusBarMenuBuilder(),
