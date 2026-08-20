@@ -177,8 +177,10 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
             context.allowsImplicitAnimation = true
             window.animator().setFrame(hiddenFrame, display: true)
         }, completionHandler: { [weak self] in
-            guard let self = self, !self.engine.state.isVisible else { return }
-            self.window?.orderOut(nil)
+            Task { @MainActor [weak self] in
+                guard let self = self, !self.engine.state.isVisible else { return }
+                self.window?.orderOut(nil)
+            }
         })
     }
 }

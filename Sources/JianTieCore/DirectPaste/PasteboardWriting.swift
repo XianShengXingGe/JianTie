@@ -60,7 +60,7 @@ public final class SystemPasteboardWriter: PasteboardWriting, @unchecked Sendabl
             }
 
             pasteboard.declareTypes([type, .tiff], owner: nil)
-            var success = pasteboard.setData(imageContent.imageData, forType: type)
+            let success = pasteboard.setData(imageContent.imageData, forType: type)
 
             // 如果非 tiff 但能解析为 NSImage，补充声明 tiff 以获得最大兼容性
             if type != .tiff, let image = NSImage(data: imageContent.imageData), let tiffData = image.tiffRepresentation {

@@ -16,13 +16,19 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             accessibilityService: AccessibilityPermissionService.shared,
             menuBuilder: StatusBarMenuBuilder(),
             presentGuidanceHandler: {
-                AccessibilityGuidanceWindowController.shared.showWindow()
+                Task { @MainActor in
+                    AccessibilityGuidanceWindowController.shared.showWindow()
+                }
             },
             presentClipboardHandler: { [weak self] target in
-                self?.clipboardWindowController?.show(targetApp: target)
+                Task { @MainActor in
+                    self?.clipboardWindowController?.show(targetApp: target)
+                }
             },
             presentPreferencesHandler: { [weak self] in
-                self?.preferencesWindowController?.showWindow()
+                Task { @MainActor in
+                    self?.preferencesWindowController?.showWindow()
+                }
             }
         )
 
