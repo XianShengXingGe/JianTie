@@ -5,12 +5,14 @@ import JianTieCore
 /// 单个 Stack 暂存卡片视图
 public struct ShelfStackCardView: View {
     public let stack: ShelfStack
+    public let isDragging: Bool
     public let onDiscard: () -> Void
 
     @State private var isHovered: Bool = false
 
-    public init(stack: ShelfStack, onDiscard: @escaping () -> Void) {
+    public init(stack: ShelfStack, isDragging: Bool = false, onDiscard: @escaping () -> Void) {
         self.stack = stack
+        self.isDragging = isDragging
         self.onDiscard = onDiscard
     }
 
@@ -59,8 +61,8 @@ public struct ShelfStackCardView: View {
                     .stroke(isHovered ? Color.accentColor.opacity(0.4) : Color.primary.opacity(0.08), lineWidth: 1)
             )
 
-            // 左上角悬停展示的微型 ✕ 丢弃按钮
-            if isHovered {
+            // 左上角悬停展示的微型 ✕ 丢弃按钮（仅在非拖拽状态下浮现）
+            if isHovered && !isDragging {
                 Button(action: onDiscard) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))

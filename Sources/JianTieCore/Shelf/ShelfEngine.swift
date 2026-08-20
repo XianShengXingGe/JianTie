@@ -54,11 +54,20 @@ public final class ShelfEngine: ObservableObject {
     }
 
     @Published public private(set) var stacks: [ShelfStack] = []
+    @Published public private(set) var isStackDragging: Bool = false
+    @Published public private(set) var activeDraggingStack: ShelfStack?
+    @Published public private(set) var actionFeedback: String?
+
+    public var isActionZoneVisible: Bool {
+        return state.isDragging || isStackDragging || actionFeedback != nil
+    }
 
     public let dragMonitor: DragMonitoring
     public let edgeMonitor: ShelfEdgeMonitor
     public let geometryCalculator: ShelfGeometryCalculator
     public let pruner: ShelfPruner
+    public let airDropService: AirDropSharingProviding
+    public let pasteboardWriter: PasteboardWriting
 
     public var onRequestReveal: ((_ visibleFrame: CGRect, _ hiddenFrame: CGRect, _ isDragging: Bool) -> Void)?
     public var onRequestHide: ((_ hiddenFrame: CGRect) -> Void)?
@@ -66,6 +75,7 @@ public final class ShelfEngine: ObservableObject {
 
     private var activeScreen: ScreenInfo?
     private let sharedState = SharedShelfState()
+    private var feedbackTask: Task<Void, Never>?
 
     public init(
         edge: ShelfEdge = .left,
@@ -73,11 +83,20 @@ public final class ShelfEngine: ObservableObject {
         edgeMonitor: ShelfEdgeMonitor? = nil,
         geometryCalculator: ShelfGeometryCalculator = ShelfGeometryCalculator(),
         pruner: ShelfPruner? = nil,
+        airDropService: AirDropSharingProviding? = nil,
+        pasteboardWriter: PasteboardWriting? = nil,
         autoStart: Bool = true
     ) {
         self.edge = edge
         self.geometryCalculator = geometryCalculator
         self.pruner = pruner ?? ShelfPruner()
+        #if canImport(AppKit)
+        self.airDropService = airDropService ?? SystemAirDropService()
+        self.pasteboardWriter = pasteboardWriter ?? SystemPasteboardWriter()
+        #else
+        self.airDropService = airDropService ?? MockAirDropFallback()
+        self.pasteboardWriter = pasteboardWriter ?? MockPasteboardFallback()
+        #endif
         self.sharedState.edge = edge
         self.sharedState.isRevealed = false
 
@@ -204,8 +223,72 @@ public final class ShelfEngine: ObservableObject {
         }
     }
 
+    // MARK: - Action Zone & Drag Notifications
+
+    /// 通知 Stack 拖拽开始，激活底部动作区
+    public func notifyStackDragStarted(stack: ShelfStack) {
+        self.isStackDragging = true
+        self.activeDraggingStack = stack
+    }
+
+    /// 通知 Stack 拖拽结束
+    public func notifyStackDragEnded() {
+        self.isStackDragging = false
+        self.activeDraggingStack = nil
+    }
+
+    /// 拖入 AirDrop 区域：调用系统分享并在成功后清除 Stack
+    public func handleAirDrop(urls: [URL], sourceStackId: UUID? = nil) {
+        guard !urls.isEmpty else { return }
+
+        let targetStackId = sourceStackId ?? activeDraggingStack?.id ?? stacks.first(where: { stack in
+            Set(stack.resolvedURLs) == Set(urls)
+        })?.id
+
+        airDropService.performAirDrop(urls: urls) { [weak self] success in
+            guard let self = self else { return }
+            if success {
+                if let targetId = targetStackId {
+                    self.removeStack(id: targetId)
+                }
+            }
+        }
+    }
+
+    /// 拖入 Copy Path 区域：换行复制全部绝对路径，显示微小反馈并立即移除 Stack
+    public func handleCopyPath(urls: [URL], sourceStackId: UUID? = nil) {
+        guard !urls.isEmpty else { return }
+
+        let pathString = urls.map { $0.path }.joined(separator: "\n")
+        pasteboardWriter.write(content: .text(ClipboardTextContent(plainText: pathString)))
+
+        // 展示轻量内联提示反馈
+        self.actionFeedback = "✓ Path copied"
+        feedbackTask?.cancel()
+        feedbackTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            self?.actionFeedback = nil
+        }
+
+        let targetStackId = sourceStackId ?? activeDraggingStack?.id ?? stacks.first(where: { stack in
+            Set(stack.resolvedURLs) == Set(urls)
+        })?.id
+
+        if let targetId = targetStackId {
+            self.removeStack(id: targetId)
+        }
+    }
+
+    /// 清除内联反馈提示
+    public func clearActionFeedback() {
+        feedbackTask?.cancel()
+        feedbackTask = nil
+        self.actionFeedback = nil
+    }
+
     /// 处理 Stack 拖出（Drag Out）结束事件
     public func handleStackDragOutCompleted(stackId: UUID, success: Bool) {
+        notifyStackDragEnded()
         if success {
             removeStack(id: stackId)
         } else {

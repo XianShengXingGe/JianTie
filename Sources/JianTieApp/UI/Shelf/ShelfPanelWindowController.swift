@@ -18,6 +18,7 @@ final class ShelfContainerHostView<Content: View>: NSHostingView<Content> {
     private var trackingArea: NSTrackingArea?
     var onMouseEntered: (() -> Void)?
     var onMouseExited: (() -> Void)?
+    var onActionDrop: ((NSPoint, [URL]) -> Bool)?
     var onDropFiles: (([URL]) -> Void)?
 
     override func updateTrackingAreas() {
@@ -52,11 +53,17 @@ final class ShelfContainerHostView<Content: View>: NSHostingView<Content> {
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let pboard = sender.draggingPasteboard
-        if let urls = pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
-            onDropFiles?(urls)
+        guard let urls = pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty else {
+            return false
+        }
+
+        let loc = sender.draggingLocation
+        if onActionDrop?(loc, urls) == true {
             return true
         }
-        return false
+
+        onDropFiles?(urls)
+        return true
     }
 }
 
@@ -105,6 +112,20 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
 
         hostView.onMouseExited = { [weak self] in
             self?.engine.handleMouseExitedShelf()
+        }
+
+        hostView.onActionDrop = { [weak self] location, urls in
+            guard let self = self, self.engine.isActionZoneVisible else { return false }
+            // Cocoa 坐标系：原点在左下角
+            // 底部 0~46 为 Copy Path，46~86 为 AirDrop
+            if location.y >= 0 && location.y < 46 {
+                self.engine.handleCopyPath(urls: urls)
+                return true
+            } else if location.y >= 46 && location.y < 86 {
+                self.engine.handleAirDrop(urls: urls)
+                return true
+            }
+            return false
         }
 
         hostView.onDropFiles = { [weak self] urls in

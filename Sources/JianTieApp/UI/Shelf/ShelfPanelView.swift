@@ -1,7 +1,7 @@
 import SwiftUI
 import JianTieCore
 
-/// Shelf 暂存架主视图，支持空状态提示与多 Stack 垂直列表平滑滚动展示
+/// Shelf 暂存架主视图，支持空状态提示、多 Stack 列表展示与底部动态 Action Zone
 public struct ShelfPanelView: View {
     @ObservedObject public var engine: ShelfEngine
 
@@ -16,6 +16,11 @@ public struct ShelfPanelView: View {
             } else {
                 multiStackScrollView
             }
+
+            // 仅在拖拽活动中动态附着展示于 Shelf 列表正下方
+            if engine.isActionZoneVisible {
+                ShelfActionZoneView(engine: engine)
+            }
         }
         .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -29,6 +34,7 @@ public struct ShelfPanelView: View {
                 .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 4)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .animation(.spring(response: 0.28, dampingFraction: 0.8), value: engine.isActionZoneVisible)
     }
 
     // MARK: - Multi Stack Content
@@ -59,6 +65,12 @@ public struct ShelfPanelView: View {
                     ForEach(engine.stacks) { stack in
                         ShelfDraggableStackView(
                             stack: stack,
+                            isDragging: engine.isStackDragging || engine.state.isDragging,
+                            onDragStart: {
+                                withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
+                                    engine.notifyStackDragStarted(stack: stack)
+                                }
+                            },
                             onDiscard: {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                     engine.removeStack(id: stack.id)

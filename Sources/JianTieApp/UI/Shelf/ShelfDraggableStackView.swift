@@ -5,6 +5,8 @@ import JianTieCore
 /// 封装 NSDraggingSource 协议的 AppKit 容器 View，支持将 Stack 完整拖出到外部并精确监听 Drop 结果
 public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
     public var stack: ShelfStack
+    public var isDragging: Bool = false
+    public var onDragStart: (() -> Void)?
     public var onDragOutEnded: ((Bool) -> Void)?
     public var onDiscard: (() -> Void)?
 
@@ -12,8 +14,16 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
     private var isDraggingSessionActive = false
     private var hostingView: NSHostingView<ShelfStackCardView>?
 
-    public init(stack: ShelfStack, onDiscard: @escaping () -> Void, onDragOutEnded: @escaping (Bool) -> Void) {
+    public init(
+        stack: ShelfStack,
+        isDragging: Bool = false,
+        onDragStart: (() -> Void)? = nil,
+        onDiscard: @escaping () -> Void,
+        onDragOutEnded: @escaping (Bool) -> Void
+    ) {
         self.stack = stack
+        self.isDragging = isDragging
+        self.onDragStart = onDragStart
         self.onDiscard = onDiscard
         self.onDragOutEnded = onDragOutEnded
         super.init(frame: .zero)
@@ -25,13 +35,22 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
         fatalError("init(coder:) has not been implemented")
     }
 
-    public func update(stack: ShelfStack, onDiscard: @escaping () -> Void, onDragOutEnded: @escaping (Bool) -> Void) {
+    public func update(
+        stack: ShelfStack,
+        isDragging: Bool,
+        onDragStart: (() -> Void)?,
+        onDiscard: @escaping () -> Void,
+        onDragOutEnded: @escaping (Bool) -> Void
+    ) {
         self.stack = stack
+        self.isDragging = isDragging
+        self.onDragStart = onDragStart
         self.onDiscard = onDiscard
         self.onDragOutEnded = onDragOutEnded
 
         let cardView = ShelfStackCardView(
             stack: stack,
+            isDragging: isDragging,
             onDiscard: { [weak self] in
                 self?.onDiscard?()
             }
@@ -42,6 +61,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
     private func setupContentView() {
         let cardView = ShelfStackCardView(
             stack: stack,
+            isDragging: isDragging,
             onDiscard: { [weak self] in
                 self?.onDiscard?()
             }
@@ -91,6 +111,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
         guard !validURLs.isEmpty else { return }
 
         self.isDraggingSessionActive = true
+        onDragStart?()
 
         let mousePos = convert(event.locationInWindow, from: nil)
         let draggingItems: [NSDraggingItem] = validURLs.map { url in
@@ -122,15 +143,21 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
 /// SwiftUI 包装器，将 ShelfStackDragHostingView 桥接至 SwiftUI
 public struct ShelfDraggableStackView: NSViewRepresentable {
     public let stack: ShelfStack
+    public let isDragging: Bool
+    public let onDragStart: (() -> Void)?
     public let onDiscard: () -> Void
     public let onDragOutEnded: (Bool) -> Void
 
     public init(
         stack: ShelfStack,
+        isDragging: Bool = false,
+        onDragStart: (() -> Void)? = nil,
         onDiscard: @escaping () -> Void,
         onDragOutEnded: @escaping (Bool) -> Void
     ) {
         self.stack = stack
+        self.isDragging = isDragging
+        self.onDragStart = onDragStart
         self.onDiscard = onDiscard
         self.onDragOutEnded = onDragOutEnded
     }
@@ -138,6 +165,8 @@ public struct ShelfDraggableStackView: NSViewRepresentable {
     public func makeNSView(context: Context) -> ShelfStackDragHostingView {
         return ShelfStackDragHostingView(
             stack: stack,
+            isDragging: isDragging,
+            onDragStart: onDragStart,
             onDiscard: onDiscard,
             onDragOutEnded: onDragOutEnded
         )
@@ -146,6 +175,8 @@ public struct ShelfDraggableStackView: NSViewRepresentable {
     public func updateNSView(_ nsView: ShelfStackDragHostingView, context: Context) {
         nsView.update(
             stack: stack,
+            isDragging: isDragging,
+            onDragStart: onDragStart,
             onDiscard: onDiscard,
             onDragOutEnded: onDragOutEnded
         )
