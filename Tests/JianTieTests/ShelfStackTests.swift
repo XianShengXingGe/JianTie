@@ -1,19 +1,23 @@
+#if canImport(XCTest)
 import XCTest
+#endif
 import Foundation
 @testable import JianTieCore
 
 final class ShelfStackTests: XCTestCase {
     private var tempDirectory: URL!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
     }
 
-    override func tearDown() async throws {
-        try? FileManager.default.removeItem(at: tempDirectory)
-        try await super.tearDown()
+    override func tearDownWithError() throws {
+        if let tempDirectory = tempDirectory {
+            try? FileManager.default.removeItem(at: tempDirectory)
+        }
+        try super.tearDownWithError()
     }
 
     func test_singleFileReference_propertiesAndBookmark() throws {

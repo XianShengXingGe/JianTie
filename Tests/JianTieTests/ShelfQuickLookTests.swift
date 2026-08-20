@@ -1,4 +1,6 @@
+#if canImport(XCTest)
 import XCTest
+#endif
 import Foundation
 @testable import JianTieCore
 

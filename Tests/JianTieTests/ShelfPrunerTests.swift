@@ -1,4 +1,6 @@
+#if canImport(XCTest)
 import XCTest
+#endif
 import Foundation
 @testable import JianTieCore
 
@@ -14,8 +16,8 @@ final class ShelfPrunerTests: XCTestCase {
     private var checker: MockFileReachableChecker!
     private var pruner: ShelfPruner!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         checker = MockFileReachableChecker()
         pruner = ShelfPruner(checker: checker, interval: 1.0)
     }

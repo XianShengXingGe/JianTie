@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(XCTest)
 import XCTest
+#endif
 import AppKit
 @testable import JianTieCore
 
@@ -197,8 +200,8 @@ final class DirectPasteServiceTests: XCTestCase {
         XCTAssertEqual(mockSynthesizer.synthesizedCount, 0)
     }
 
-    func test_directPasteService_defaultYieldDelay_is120ms() {
+    func test_directPasteService_defaultYieldDelay_is30ms() {
         let service = DirectPasteService()
-        XCTAssertEqual(service.yieldDelay, 0.12)
+        XCTAssertEqual(service.yieldDelay, 0.03)
     }
 }

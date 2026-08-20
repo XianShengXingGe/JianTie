@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(XCTest)
 import XCTest
+#endif
 import CoreGraphics
 @testable import JianTieCore
 
@@ -43,8 +46,8 @@ final class ShelfEngineTests: XCTestCase {
         visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
     )
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         dragMonitor = MockDragMonitor()
         engine = ShelfEngine(
             edge: .left,

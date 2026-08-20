@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(XCTest)
 import XCTest
+#endif
 @testable import JianTieCore
 
 private final class StorageTestPreferences: PreferencesProviding, @unchecked Sendable {
@@ -56,7 +59,7 @@ final class ClipboardStorageTests: XCTestCase {
         XCTAssertEqual(loadedItems.first?.plainTextSummary, "Hello, JianTie!")
     }
 
-    func test_append_duplicateText_deduplicatesAndPrependsToTop() throws {
+    func test_append_duplicateText_recordsSeparateChronologicalEntries() throws {
         let storage = FileClipboardStorage(baseDirectoryURL: tempDirectoryURL, preferences: testPreferences)
         let firstItem = ClipboardItem(
             timestamp: Date(timeIntervalSince1970: 1000),
@@ -75,14 +78,16 @@ final class ClipboardStorageTests: XCTestCase {
         try storage.append(item: otherItem)
         let items = try storage.append(item: duplicateItem)
 
-        // Old "Same Text" removed, new one placed at index 0
-        XCTAssertEqual(items.count, 2)
+        // All 3 items preserved in reverse chronological order
+        XCTAssertEqual(items.count, 3)
         XCTAssertEqual(items[0].id, duplicateItem.id)
         XCTAssertEqual(items[0].timestamp, duplicateItem.timestamp)
         XCTAssertEqual(items[1].id, otherItem.id)
+        XCTAssertEqual(items[2].id, firstItem.id)
+        XCTAssertEqual(items[2].timestamp, firstItem.timestamp)
     }
 
-    func test_append_duplicateImage_deduplicatesAndCleansOldImageDiskFile() throws {
+    func test_append_duplicateImage_recordsSeparateChronologicalEntriesAndPreservesFiles() throws {
         let storage = FileClipboardStorage(baseDirectoryURL: tempDirectoryURL, preferences: testPreferences)
         let fakeImageData = Data([0x12, 0x34, 0x56, 0x78])
         let firstImage = ClipboardItem(
@@ -107,14 +112,15 @@ final class ClipboardStorageTests: XCTestCase {
 
         let items = try storage.append(item: duplicateImage)
 
-        XCTAssertEqual(items.count, 2)
+        XCTAssertEqual(items.count, 3)
         XCTAssertEqual(items[0].id, duplicateImage.id)
         XCTAssertEqual(items[1].id, textItem.id)
+        XCTAssertEqual(items[2].id, firstImage.id)
 
-        // Old image file should be purged from disk, new image file exists
+        // Both image files should be preserved on disk
         let duplicateImagePath = imagesDir.appendingPathComponent("\(duplicateImage.id.uuidString).png").path
-        XCTAssertFalse(FileManager.default.fileExists(atPath: firstImagePath), "Old duplicated image file must be deleted")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: duplicateImagePath), "New image file must be stored")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: firstImagePath), "First image file must be preserved")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: duplicateImagePath), "Duplicate image file must be stored")
     }
 
     func test_append_richTextItem_persistsRtfAndHtml() throws {

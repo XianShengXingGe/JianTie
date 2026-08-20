@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(XCTest)
 import XCTest
+#endif
 @testable import JianTieCore
 
 private final class MockDoubleTapMonitor: DoubleTapMonitoring, @unchecked Sendable {

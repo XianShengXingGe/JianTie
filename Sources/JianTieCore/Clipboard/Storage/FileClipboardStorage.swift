@@ -143,12 +143,7 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
 
         var currentItems = try load()
 
-        // 智能去重：移除历史中已存在的相同内容记录
-        currentItems.removeAll { existing in
-            existing.content.isContentEqual(to: item.content)
-        }
-
-        // 最新记录置顶插入头部 (index 0)
+        // 真实时间流记录：最新记录插入头部 (index 0)
         currentItems.insert(item, at: 0)
 
         // 执行保存周期与容量上限修剪

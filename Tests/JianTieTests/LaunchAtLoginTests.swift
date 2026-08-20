@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(XCTest)
 import XCTest
+#endif
 import ServiceManagement
 @testable import JianTieCore
 

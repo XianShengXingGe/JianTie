@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(XCTest)
 import XCTest
+#endif
 @testable import JianTieCore
 
 @MainActor
@@ -58,8 +61,8 @@ final class ShelfActionZoneTests: XCTestCase {
     private var mockPasteboard: ActionZoneMockPasteboardWriter!
     private var engine: ShelfEngine!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
@@ -80,14 +83,14 @@ final class ShelfActionZoneTests: XCTestCase {
         )
     }
 
-    override func tearDown() async throws {
+    override func tearDownWithError() throws {
         if let tempDir = tempDir {
             try? FileManager.default.removeItem(at: tempDir)
         }
         engine = nil
         mockAirDrop = nil
         mockPasteboard = nil
-        try await super.tearDown()
+        try super.tearDownWithError()
     }
 
     // MARK: - Visibility Tests

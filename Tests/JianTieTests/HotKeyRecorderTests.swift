@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(XCTest)
 import XCTest
+#endif
 import Combine
 import AppKit
 import Carbon.HIToolbox

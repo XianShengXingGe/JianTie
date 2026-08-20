@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(XCTest)
 import XCTest
+#endif
 @testable import JianTieCore
 
 private final class MockPasteboardReader: PasteboardProviding, @unchecked Sendable {
@@ -111,7 +114,7 @@ final class ClipboardEngineTests: XCTestCase {
         XCTAssertEqual(storedItems.first?.plainTextSummary, "Captured Stream Text")
     }
 
-    func test_engine_capturedDuplicateItem_deduplicatesAndPrepends() {
+    func test_engine_capturedDuplicateItem_recordsAsSeparateChronologicalEntry() {
         let engine = ClipboardEngine(
             pasteboard: mockPasteboard,
             storage: storage,
@@ -135,9 +138,11 @@ final class ClipboardEngineTests: XCTestCase {
         mockPasteboard.stubbedItem = .text(ClipboardTextContent(plainText: "Text A"))
         engine.monitor.checkPasteboard()
 
-        XCTAssertEqual(engine.items.count, 2)
+        // All 3 items should be recorded in reverse chronological order
+        XCTAssertEqual(engine.items.count, 3)
         XCTAssertEqual(engine.items[0].plainTextSummary, "Text A")
         XCTAssertEqual(engine.items[1].plainTextSummary, "Text B")
+        XCTAssertEqual(engine.items[2].plainTextSummary, "Text A")
     }
 
     func test_engine_pruneHistory_removesExpiredItems() throws {

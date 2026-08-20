@@ -1,4 +1,7 @@
+#if canImport(XCTest)
 import XCTest
+#endif
+import Foundation
 import CoreGraphics
 @testable import JianTieCore
 
@@ -54,7 +57,7 @@ final class ShelfHoverPopoverTests: XCTestCase {
 
         XCTAssertEqual(stack.count, 3)
         XCTAssertEqual(stack.files.count, 3)
-        XCTAssertEqual(stack.files.map(\.fileName), ["screenshot_01.png", "screenshot_02.png", "notes.txt"])
+        XCTAssertEqual(stack.files.map { $0.fileName }, ["screenshot_01.png", "screenshot_02.png", "notes.txt"])
         XCTAssertEqual(stack.resolvedURLs.count, 3)
         XCTAssertEqual(stack.totalSize, stack.files.reduce(0) { $0 + $1.fileSize })
     }

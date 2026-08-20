@@ -1,6 +1,6 @@
 import Foundation
 
-/// 直接回贴服务：将选定项写入系统剪贴板、恢复目标应用焦点并在 120ms 内合成 ⌘V 完成回贴
+/// 直接回贴服务：将选定项写入系统剪贴板、恢复目标应用焦点并在 30ms 内合成 ⌘V 完成回贴
 public final class DirectPasteService: Sendable {
     public let pasteboardWriter: PasteboardWriting
     public let appActivator: AppActivating
@@ -12,7 +12,7 @@ public final class DirectPasteService: Sendable {
         pasteboardWriter: PasteboardWriting = SystemPasteboardWriter(),
         appActivator: AppActivating = SystemAppActivator.shared,
         keySynthesizer: KeyEventSynthesizing = CGEventKeySynthesizer.shared,
-        yieldDelay: TimeInterval = 0.12,
+        yieldDelay: TimeInterval = 0.03,
         delayProvider: @escaping @Sendable (TimeInterval) async -> Void = { delay in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
