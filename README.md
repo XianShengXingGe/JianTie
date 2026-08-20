@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/XianShengXingGe/JianTie/releases/latest"><img src="https://img.shields.io/github/v/release/XianShengXingGe/JianTie?color=007AFF&label=下载最新版" alt="Release"></a>
+  <a href="https://github.com/XianShengXingGe/JianTie/releases/latest"><img src="https://img.shields.io/badge/下载最新版-v1.0.0-007AFF.svg" alt="下载最新版: v1.0.0"></a>
   <img src="https://img.shields.io/badge/支持系统-macOS%2013%2B-000000.svg" alt="macOS 13+">
   <img src="https://img.shields.io/badge/支持机型-M1~M4%20%2F%20Intel-success.svg" alt="Universal">
   <img src="https://img.shields.io/badge/免费开源-MIT-blue.svg" alt="License: MIT">
