@@ -7,3 +7,6 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 *.xcuserstate
 *.app
+*.dmg
+*.zip
+* 2.*
