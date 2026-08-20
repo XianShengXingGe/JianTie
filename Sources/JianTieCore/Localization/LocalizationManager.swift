@@ -24,7 +24,7 @@ public final class LocalizationManager: ObservableObject, @unchecked Sendable {
         baseBundle: Bundle? = nil,
         preferredLanguagesProvider: @escaping @Sendable () -> [String] = { Locale.preferredLanguages }
     ) {
-        let bundle = baseBundle ?? Bundle.module
+        let bundle = baseBundle ?? Self.resolveDefaultBaseBundle()
         self.preferences = preferences
         self.baseBundle = bundle
         self.preferredLanguagesProvider = preferredLanguagesProvider
@@ -66,6 +66,7 @@ public final class LocalizationManager: ObservableObject, @unchecked Sendable {
         let currentSubBundle = activeBundle
         lock.unlock()
 
+        // 1. 从当前激活语言的 SubBundle 加载
         if let bundle = currentSubBundle {
             let localized = bundle.localizedString(forKey: key, value: "###_NOT_FOUND_###", table: nil)
             if localized != "###_NOT_FOUND_###" {
@@ -73,10 +74,19 @@ public final class LocalizationManager: ObservableObject, @unchecked Sendable {
             }
         }
 
-        // 尝试从 Base Bundle 加载
+        // 2. 尝试从 Base Bundle 加载
         let baseLocalized = baseBundle.localizedString(forKey: key, value: "###_NOT_FOUND_###", table: nil)
         if baseLocalized != "###_NOT_FOUND_###" {
             return baseLocalized
+        }
+
+        // 3. 尝试从 Bundle.main 直接加载
+        let main = Bundle.main
+        if main != baseBundle {
+            let mainLocalized = main.localizedString(forKey: key, value: "###_NOT_FOUND_###", table: nil)
+            if mainLocalized != "###_NOT_FOUND_###" {
+                return mainLocalized
+            }
         }
 
         return key
@@ -88,12 +98,69 @@ public final class LocalizationManager: ObservableObject, @unchecked Sendable {
         return String(format: format, arguments: arguments)
     }
 
-    private static func loadSubBundle(for language: AppLanguage, in baseBundle: Bundle) -> Bundle? {
-        let langCode = language == .zhHans ? "zh-Hans" : "en"
-        if let path = baseBundle.path(forResource: langCode, ofType: "lproj"),
-           let bundle = Bundle(path: path) {
+    /// 自动推断当前环境下的基准资源 Bundle
+    public static func resolveDefaultBaseBundle() -> Bundle {
+        let main = Bundle.main
+        // 1. 尝试从 main.resourceURL 获取 JianTie_JianTieCore.bundle
+        if let resURL = main.resourceURL {
+            let coreBundleURL = resURL.appendingPathComponent("JianTie_JianTieCore.bundle")
+            if let bundle = Bundle(url: coreBundleURL) {
+                return bundle
+            }
+        }
+        if let corePath = main.path(forResource: "JianTie_JianTieCore", ofType: "bundle"),
+           let bundle = Bundle(path: corePath) {
             return bundle
         }
+        // 2. 检查 main bundle 是否直接包含语言包
+        if main.path(forResource: "zh-Hans", ofType: "lproj") != nil ||
+           main.path(forResource: "zh-hans", ofType: "lproj") != nil ||
+           main.path(forResource: "en", ofType: "lproj") != nil {
+            return main
+        }
+        // 3. 回退到 SPM Bundle.module
+        return Bundle.module
+    }
+
+    private static func loadSubBundle(for language: AppLanguage, in baseBundle: Bundle) -> Bundle? {
+        let candidates: [String]
+        switch language {
+        case .zhHans:
+            candidates = ["zh-Hans", "zh-hans", "zh_CN", "zh_cn", "zh-CN", "zh", "Base"]
+        case .en:
+            candidates = ["en", "en-US", "en_US", "en-GB", "Base"]
+        case .system:
+            candidates = ["zh-Hans", "zh-hans", "zh_CN", "en", "Base"]
+        }
+
+        // 1. 在 baseBundle 内部尝试所有候选语言标识
+        for code in candidates {
+            if let path = baseBundle.path(forResource: code, ofType: "lproj"),
+               let bundle = Bundle(path: path) {
+                return bundle
+            }
+            if let url = baseBundle.url(forResource: code, withExtension: "lproj"),
+               let bundle = Bundle(url: url) {
+                return bundle
+            }
+        }
+
+        // 2. 在 Bundle.main 及其 resourceURL 中尝试所有候选语言标识
+        let main = Bundle.main
+        if main != baseBundle {
+            for code in candidates {
+                if let path = main.path(forResource: code, ofType: "lproj"),
+                   let bundle = Bundle(path: path) {
+                    return bundle
+                }
+                if let url = main.resourceURL?.appendingPathComponent("\(code).lproj"),
+                   FileManager.default.fileExists(atPath: url.path),
+                   let bundle = Bundle(url: url) {
+                    return bundle
+                }
+            }
+        }
+
         return nil
     }
 }
