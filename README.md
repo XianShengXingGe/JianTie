@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon.png" width="108" height="108" alt="简贴 软件图标" style="border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+  <img src="icon.png" width="108" height="108" alt="简贴 软件图标" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.12));" />
 </p>
 
 <h1 align="center">简贴 (JianTie)</h1>
