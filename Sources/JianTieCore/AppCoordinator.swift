@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 
-/// 核心应用协调器，管理生命周期、权限状态与系统状态栏
+/// 核心应用协调器，管理生命周期、权限状态、系统状态栏与全局快捷键调度
 @MainActor
 public final class AppCoordinator: NSObject {
     public let preferences: PreferencesProviding
@@ -10,17 +10,19 @@ public final class AppCoordinator: NSObject {
     public let menuBuilder: StatusBarMenuBuilder
     public let clipboardEngine: ClipboardEngine
     public let shelfEngine: ShelfEngine
-    public let doubleTapMonitor: DoubleTapMonitoring
+    public let hotKeyService: HotKeyServiceProviding
     public let directPasteService: DirectPasteService
     public let appActivator: AppActivating
     public let presentGuidanceHandler: () -> Void
     public let presentClipboardHandler: (@Sendable (AppTarget?) -> Void)?
+    public let dismissClipboardHandler: (@Sendable () -> Void)?
+    public let isClipboardVisibleHandler: (@Sendable () -> Bool)?
     public let presentPreferencesHandler: (@Sendable () -> Void)?
     private let statusItemProvider: () -> NSStatusItem?
 
     public private(set) var statusItem: NSStatusItem?
     public private(set) var lastFrontmostApp: AppTarget?
-    public var onDoubleTapCommand: (@Sendable (AppTarget?) -> Void)?
+    public var onHotKeyTriggered: (@Sendable (AppTarget?) -> Void)?
 
     public init(
         preferences: PreferencesProviding = UserDefaultsPreferences.shared,
@@ -29,11 +31,13 @@ public final class AppCoordinator: NSObject {
         menuBuilder: StatusBarMenuBuilder = StatusBarMenuBuilder(),
         clipboardEngine: ClipboardEngine? = nil,
         shelfEngine: ShelfEngine? = nil,
-        doubleTapMonitor: DoubleTapMonitoring = DoubleTapMonitor(),
+        hotKeyService: HotKeyServiceProviding? = nil,
         directPasteService: DirectPasteService = DirectPasteService(),
         appActivator: AppActivating = SystemAppActivator.shared,
         presentGuidanceHandler: @escaping () -> Void = {},
         presentClipboardHandler: (@Sendable (AppTarget?) -> Void)? = nil,
+        dismissClipboardHandler: (@Sendable () -> Void)? = nil,
+        isClipboardVisibleHandler: (@Sendable () -> Bool)? = nil,
         presentPreferencesHandler: (@Sendable () -> Void)? = nil,
         statusItemProvider: @escaping () -> NSStatusItem? = {
             NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -45,11 +49,13 @@ public final class AppCoordinator: NSObject {
         self.menuBuilder = menuBuilder
         self.clipboardEngine = clipboardEngine ?? ClipboardEngine(autoStart: false)
         self.shelfEngine = shelfEngine ?? ShelfEngine(autoStart: false)
-        self.doubleTapMonitor = doubleTapMonitor
+        self.hotKeyService = hotKeyService ?? HotKeyService(initialTrigger: preferences.hotKeyTrigger)
         self.directPasteService = directPasteService
         self.appActivator = appActivator
         self.presentGuidanceHandler = presentGuidanceHandler
         self.presentClipboardHandler = presentClipboardHandler
+        self.dismissClipboardHandler = dismissClipboardHandler
+        self.isClipboardVisibleHandler = isClipboardVisibleHandler
         self.presentPreferencesHandler = presentPreferencesHandler
         self.statusItemProvider = statusItemProvider
         super.init()
@@ -72,20 +78,25 @@ public final class AppCoordinator: NSObject {
     }
 
     public func startHotKeyMonitoring() {
-        doubleTapMonitor.startMonitoring { [weak self] in
+        hotKeyService.startMonitoring { [weak self] in
             Task { @MainActor in
-                self?.handleDoubleTapCommand()
+                self?.handleHotKeyTrigger()
             }
         }
     }
 
-    public func handleDoubleTapCommand() {
-        let frontmost = appActivator.frontmostApp()
-        if let front = frontmost, front.processIdentifier != ProcessInfo.processInfo.processIdentifier {
-            self.lastFrontmostApp = front
+    /// 处理全局快捷键触发（实现 Toggle 唤出/收起逻辑）
+    public func handleHotKeyTrigger() {
+        if let isVisible = isClipboardVisibleHandler?(), isVisible {
+            dismissClipboardHandler?()
+        } else {
+            let frontmost = appActivator.frontmostApp()
+            if let front = frontmost, front.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+                self.lastFrontmostApp = front
+            }
+            self.onHotKeyTriggered?(lastFrontmostApp)
+            self.presentClipboardHandler?(lastFrontmostApp)
         }
-        self.onDoubleTapCommand?(lastFrontmostApp)
-        self.presentClipboardHandler?(lastFrontmostApp)
     }
 
     @discardableResult

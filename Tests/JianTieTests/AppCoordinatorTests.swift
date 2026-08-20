@@ -2,9 +2,12 @@ import XCTest
 import AppKit
 @testable import JianTieCore
 
-private final class MockDoubleTapMonitor: DoubleTapMonitoring, @unchecked Sendable {
+private final class MockHotKeyService: HotKeyServiceProviding, @unchecked Sendable {
+    var currentTrigger: HotKeyTrigger = .default
     var isMonitoring: Bool = false
     var triggerHandler: (@Sendable () -> Void)?
+    var updateTriggerCallCount = 0
+    var stopCallCount = 0
 
     func startMonitoring(onTrigger: @escaping @Sendable () -> Void) {
         self.isMonitoring = true
@@ -14,6 +17,12 @@ private final class MockDoubleTapMonitor: DoubleTapMonitoring, @unchecked Sendab
     func stopMonitoring() {
         self.isMonitoring = false
         self.triggerHandler = nil
+        self.stopCallCount += 1
+    }
+
+    func updateTrigger(_ trigger: HotKeyTrigger) {
+        self.currentTrigger = trigger
+        self.updateTriggerCallCount += 1
     }
 
     func simulateTrigger() {
@@ -59,6 +68,7 @@ private final class MockKeySynthesizer: KeyEventSynthesizing, @unchecked Sendabl
 private final class MockPreferences: PreferencesProviding, @unchecked Sendable {
     var launchAtLogin: Bool = false
     var hasConfiguredLaunchAtLogin: Bool = false
+    var hotKeyTrigger: HotKeyTrigger = .default
     var shelfEdge: ShelfEdge = .left
     var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
     var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
@@ -155,33 +165,74 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertNotNil(coordinator.clipboardEngine)
     }
 
-    func test_doubleTap_triggersCallbackAndRecordsLastFrontmostApp() {
+    func test_hotKeyTrigger_whenClipboardHidden_recordsFrontmostAndPresents() {
         let expectedTarget = AppTarget(bundleIdentifier: "com.apple.Notes", processIdentifier: 1234, localizedName: "Notes")
         let activator = MockAppActivator()
         activator.currentFrontmost = expectedTarget
 
-        let mockMonitor = MockDoubleTapMonitor()
+        let mockHotKey = MockHotKeyService()
+        let presentedTarget = TestBox<AppTarget?>(nil)
+        let triggeredTarget = TestBox<AppTarget?>(nil)
+        let isVisibleBox = TestBox(false)
+
         let coordinator = AppCoordinator(
-            doubleTapMonitor: mockMonitor,
+            hotKeyService: mockHotKey,
             appActivator: activator,
+            presentClipboardHandler: { target in
+                presentedTarget.value = target
+            },
+            isClipboardVisibleHandler: {
+                isVisibleBox.value
+            },
             statusItemProvider: { nil }
         )
-
-        let receivedTarget = TestBox<AppTarget?>(nil)
-        coordinator.onDoubleTapCommand = { target in
-            receivedTarget.value = target
+        coordinator.onHotKeyTriggered = { target in
+            triggeredTarget.value = target
         }
 
         coordinator.start()
-        XCTAssertTrue(mockMonitor.isMonitoring)
+        XCTAssertTrue(mockHotKey.isMonitoring)
 
-        // 模拟触发双击 Command
-        mockMonitor.simulateTrigger()
-
-        coordinator.handleDoubleTapCommand()
+        // 模拟触发热键
+        mockHotKey.simulateTrigger()
+        coordinator.handleHotKeyTrigger()
 
         XCTAssertEqual(coordinator.lastFrontmostApp, expectedTarget)
-        XCTAssertEqual(receivedTarget.value, expectedTarget)
+        XCTAssertEqual(presentedTarget.value, expectedTarget)
+        XCTAssertEqual(triggeredTarget.value, expectedTarget)
+    }
+
+    func test_hotKeyTrigger_whenClipboardVisible_togglesAndDismisses() {
+        let activator = MockAppActivator()
+        activator.currentFrontmost = AppTarget(bundleIdentifier: "com.apple.Notes", processIdentifier: 1234, localizedName: "Notes")
+
+        let mockHotKey = MockHotKeyService()
+        let presentedCalled = TestBox(false)
+        let dismissCalled = TestBox(false)
+        let isVisibleBox = TestBox(true)
+
+        let coordinator = AppCoordinator(
+            hotKeyService: mockHotKey,
+            appActivator: activator,
+            presentClipboardHandler: { _ in
+                presentedCalled.value = true
+            },
+            dismissClipboardHandler: {
+                dismissCalled.value = true
+            },
+            isClipboardVisibleHandler: {
+                isVisibleBox.value
+            },
+            statusItemProvider: { nil }
+        )
+
+        coordinator.start()
+
+        // 模拟在可见状态下按下快捷键
+        coordinator.handleHotKeyTrigger()
+
+        XCTAssertTrue(dismissCalled.value)
+        XCTAssertFalse(presentedCalled.value)
     }
 
     func test_pasteItem_delegatesToDirectPasteService() async {
@@ -204,7 +255,7 @@ final class AppCoordinatorTests: XCTestCase {
         )
 
         // 记录前台应用
-        coordinator.handleDoubleTapCommand()
+        coordinator.handleHotKeyTrigger()
         XCTAssertEqual(coordinator.lastFrontmostApp, expectedTarget)
 
         let item = ClipboardItem(content: .text(ClipboardTextContent(plainText: "Coordinator Paste Test")))
@@ -214,25 +265,6 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockWriter.writtenContents.count, 1)
         XCTAssertEqual(activator.activatedTargets.count, 1)
         XCTAssertEqual(mockSynthesizer.synthesizedCount, 1)
-    }
-
-    func test_doubleTap_triggersPresentClipboardHandler() {
-        let expectedTarget = AppTarget(bundleIdentifier: "com.apple.Terminal", processIdentifier: 5678, localizedName: "Terminal")
-        let activator = MockAppActivator()
-        activator.currentFrontmost = expectedTarget
-
-        let presentedTarget = TestBox<AppTarget?>(nil)
-        let coordinator = AppCoordinator(
-            appActivator: activator,
-            presentClipboardHandler: { target in
-                presentedTarget.value = target
-            },
-            statusItemProvider: { nil }
-        )
-
-        coordinator.handleDoubleTapCommand()
-
-        XCTAssertEqual(presentedTarget.value, expectedTarget)
     }
 
     func test_start_startsShelfMonitoring() {

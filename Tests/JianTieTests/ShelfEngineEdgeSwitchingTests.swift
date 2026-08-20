@@ -5,6 +5,7 @@ import CoreGraphics
 private final class MockPreferences: PreferencesProviding, @unchecked Sendable {
     var launchAtLogin: Bool = true
     var hasConfiguredLaunchAtLogin: Bool = true
+    var hotKeyTrigger: HotKeyTrigger = .default
     var shelfEdge: ShelfEdge = .left
     var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
     var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited

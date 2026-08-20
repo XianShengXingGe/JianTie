@@ -1,10 +1,17 @@
 import Foundation
 import Combine
 
-/// 偏好设置视图模型，管理 Shelf 边缘配置、剪贴板容量生命周期、权限状态与版本展示
+/// 偏好设置视图模型，管理 Shelf 边缘配置、剪贴板容量生命周期、全局快捷键、权限状态与版本展示
 @MainActor
 public final class PreferencesViewModel: ObservableObject {
     @Published public var launchAtLogin: Bool
+    @Published public var hotKeyTrigger: HotKeyTrigger {
+        didSet {
+            preferences.hotKeyTrigger = hotKeyTrigger
+            hotKeyService?.updateTrigger(hotKeyTrigger)
+        }
+    }
+
     @Published public var shelfEdge: ShelfEdge {
         didSet {
             preferences.shelfEdge = shelfEdge
@@ -34,6 +41,7 @@ public final class PreferencesViewModel: ObservableObject {
     public let accessibilityService: AccessibilityPermissionProviding
     public weak var shelfEngine: ShelfEngine?
     public weak var clipboardEngine: ClipboardEngine?
+    public weak var hotKeyService: HotKeyServiceProviding?
     private let bundle: Bundle
 
     public init(
@@ -42,6 +50,7 @@ public final class PreferencesViewModel: ObservableObject {
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
         shelfEngine: ShelfEngine? = nil,
         clipboardEngine: ClipboardEngine? = nil,
+        hotKeyService: HotKeyServiceProviding? = nil,
         bundle: Bundle = .main
     ) {
         self.preferences = preferences
@@ -49,8 +58,10 @@ public final class PreferencesViewModel: ObservableObject {
         self.accessibilityService = accessibilityService
         self.shelfEngine = shelfEngine
         self.clipboardEngine = clipboardEngine
+        self.hotKeyService = hotKeyService
         self.bundle = bundle
         self.launchAtLogin = launchAtLoginService.isEnabled
+        self.hotKeyTrigger = preferences.hotKeyTrigger
         self.shelfEdge = preferences.shelfEdge
         self.clipboardCapacityLimit = preferences.clipboardCapacityLimit
         self.clipboardRetentionPeriod = preferences.clipboardRetentionPeriod
@@ -81,6 +92,12 @@ public final class PreferencesViewModel: ObservableObject {
         }
         self.launchAtLogin = launchAtLoginService.isEnabled
         self.preferences.launchAtLogin = self.launchAtLogin
+    }
+
+    /// 设置全局快捷键
+    public func setHotKeyTrigger(_ trigger: HotKeyTrigger) {
+        guard self.hotKeyTrigger != trigger else { return }
+        self.hotKeyTrigger = trigger
     }
 
     /// 切换 Shelf 屏幕停靠边缘

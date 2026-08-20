@@ -7,6 +7,7 @@ public final class UserDefaultsPreferences: PreferencesProviding, @unchecked Sen
     public enum Keys {
         public static let launchAtLogin = "jiantie.general.launchAtLogin"
         public static let hasConfiguredLaunchAtLogin = "jiantie.general.hasConfiguredLaunchAtLogin"
+        public static let hotKeyTrigger = "jiantie.hotkey.trigger"
         public static let shelfEdge = "jiantie.shelf.edge"
         public static let clipboardCapacityLimit = "jiantie.clipboard.capacityLimit"
         public static let clipboardRetentionPeriod = "jiantie.clipboard.retentionPeriod"
@@ -45,6 +46,28 @@ public final class UserDefaultsPreferences: PreferencesProviding, @unchecked Sen
             lock.lock()
             defer { lock.unlock() }
             userDefaults.set(newValue, forKey: Keys.hasConfiguredLaunchAtLogin)
+        }
+    }
+
+    public var hotKeyTrigger: HotKeyTrigger {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            guard let data = userDefaults.data(forKey: Keys.hotKeyTrigger) else {
+                return .default
+            }
+            do {
+                return try JSONDecoder().decode(HotKeyTrigger.self, from: data)
+            } catch {
+                return .default
+            }
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            if let data = try? JSONEncoder().encode(newValue) {
+                userDefaults.set(data, forKey: Keys.hotKeyTrigger)
+            }
         }
     }
 

@@ -5,6 +5,7 @@ import Combine
 private final class MockPreferences: PreferencesProviding, @unchecked Sendable {
     var launchAtLogin: Bool = true
     var hasConfiguredLaunchAtLogin: Bool = false
+    var hotKeyTrigger: HotKeyTrigger = .default
     var shelfEdge: ShelfEdge = .left
     var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
     var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
@@ -46,6 +47,25 @@ private final class MockAccessibilityPermissionService: AccessibilityPermissionP
     }
 }
 
+private final class MockHotKeyService: HotKeyServiceProviding, @unchecked Sendable {
+    var currentTrigger: HotKeyTrigger = .default
+    var isMonitoring: Bool = false
+    var updatedTriggers: [HotKeyTrigger] = []
+
+    func startMonitoring(onTrigger: @escaping @Sendable () -> Void) {
+        isMonitoring = true
+    }
+
+    func stopMonitoring() {
+        isMonitoring = false
+    }
+
+    func updateTrigger(_ trigger: HotKeyTrigger) {
+        currentTrigger = trigger
+        updatedTriggers.append(trigger)
+    }
+}
+
 @MainActor
 final class PreferencesTests: XCTestCase {
     private var testUserDefaults: UserDefaults!
@@ -70,6 +90,7 @@ final class PreferencesTests: XCTestCase {
         let prefs = UserDefaultsPreferences(userDefaults: testUserDefaults)
         XCTAssertTrue(prefs.launchAtLogin)
         XCTAssertFalse(prefs.hasConfiguredLaunchAtLogin)
+        XCTAssertEqual(prefs.hotKeyTrigger, .default)
         XCTAssertEqual(prefs.shelfEdge, .left)
         XCTAssertEqual(prefs.clipboardCapacityLimit, .count1000)
         XCTAssertEqual(prefs.clipboardRetentionPeriod, .unlimited)
@@ -79,12 +100,14 @@ final class PreferencesTests: XCTestCase {
         let prefs = UserDefaultsPreferences(userDefaults: testUserDefaults)
         prefs.launchAtLogin = false
         prefs.hasConfiguredLaunchAtLogin = true
+        prefs.hotKeyTrigger = .keyCombination(keyCode: 9, modifiers: [.option])
         prefs.shelfEdge = .right
         prefs.clipboardCapacityLimit = .count300
         prefs.clipboardRetentionPeriod = .days30
 
         XCTAssertFalse(prefs.launchAtLogin)
         XCTAssertTrue(prefs.hasConfiguredLaunchAtLogin)
+        XCTAssertEqual(prefs.hotKeyTrigger, .keyCombination(keyCode: 9, modifiers: [.option]))
         XCTAssertEqual(prefs.shelfEdge, .right)
         XCTAssertEqual(prefs.clipboardCapacityLimit, .count300)
         XCTAssertEqual(prefs.clipboardRetentionPeriod, .days30)
@@ -93,6 +116,7 @@ final class PreferencesTests: XCTestCase {
         let prefs2 = UserDefaultsPreferences(userDefaults: testUserDefaults)
         XCTAssertFalse(prefs2.launchAtLogin)
         XCTAssertTrue(prefs2.hasConfiguredLaunchAtLogin)
+        XCTAssertEqual(prefs2.hotKeyTrigger, .keyCombination(keyCode: 9, modifiers: [.option]))
         XCTAssertEqual(prefs2.shelfEdge, .right)
         XCTAssertEqual(prefs2.clipboardCapacityLimit, .count300)
         XCTAssertEqual(prefs2.clipboardRetentionPeriod, .days30)
@@ -102,17 +126,20 @@ final class PreferencesTests: XCTestCase {
         testUserDefaults.set("invalid_edge_key", forKey: UserDefaultsPreferences.Keys.shelfEdge)
         testUserDefaults.set(99999, forKey: UserDefaultsPreferences.Keys.clipboardCapacityLimit)
         testUserDefaults.set(99999, forKey: UserDefaultsPreferences.Keys.clipboardRetentionPeriod)
+        testUserDefaults.set("corrupted_data".data(using: .utf8), forKey: UserDefaultsPreferences.Keys.hotKeyTrigger)
 
         let prefs = UserDefaultsPreferences(userDefaults: testUserDefaults)
         XCTAssertEqual(prefs.shelfEdge, .left)
         XCTAssertEqual(prefs.clipboardCapacityLimit, .count1000)
         XCTAssertEqual(prefs.clipboardRetentionPeriod, .unlimited)
+        XCTAssertEqual(prefs.hotKeyTrigger, .default)
     }
 
     // MARK: - PreferencesViewModel Tests
 
     func test_preferencesViewModel_initialValues() {
         let mockPrefs = MockPreferences()
+        mockPrefs.hotKeyTrigger = .doubleTap(modifier: .option)
         mockPrefs.shelfEdge = .right
         mockPrefs.clipboardCapacityLimit = .count500
         mockPrefs.clipboardRetentionPeriod = .days7
@@ -128,6 +155,7 @@ final class PreferencesTests: XCTestCase {
         )
 
         XCTAssertTrue(vm.launchAtLogin)
+        XCTAssertEqual(vm.hotKeyTrigger, .doubleTap(modifier: .option))
         XCTAssertEqual(vm.shelfEdge, .right)
         XCTAssertEqual(vm.clipboardCapacityLimit, .count500)
         XCTAssertEqual(vm.clipboardRetentionPeriod, .days7)
@@ -135,6 +163,24 @@ final class PreferencesTests: XCTestCase {
         XCTAssertTrue(vm.clipboardRetentionDescription.contains("FIFO"))
         XCTAssertFalse(vm.appVersionText.isEmpty)
         XCTAssertFalse(vm.showClearConfirmationAlert)
+    }
+
+    func test_preferencesViewModel_setHotKeyTrigger_updatesPrefsAndHotKeyService() {
+        let mockPrefs = MockPreferences()
+        let mockHotKey = MockHotKeyService()
+
+        let vm = PreferencesViewModel(
+            preferences: mockPrefs,
+            hotKeyService: mockHotKey
+        )
+
+        let newTrigger = HotKeyTrigger.keyCombination(keyCode: 9, modifiers: [.option])
+        vm.setHotKeyTrigger(newTrigger)
+
+        XCTAssertEqual(vm.hotKeyTrigger, newTrigger)
+        XCTAssertEqual(mockPrefs.hotKeyTrigger, newTrigger)
+        XCTAssertEqual(mockHotKey.updatedTriggers, [newTrigger])
+        XCTAssertEqual(mockHotKey.currentTrigger, newTrigger)
     }
 
     func test_preferencesViewModel_setLaunchAtLogin_registersAndUnregisters() {

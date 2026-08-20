@@ -2,9 +2,10 @@ import Foundation
 import AppKit
 import Carbon.HIToolbox
 
-/// 全局双击 ⌘ 监听服务
+/// 全局双击修饰键监听服务
 public final class DoubleTapMonitor: DoubleTapMonitoring, @unchecked Sendable {
     public let detector: DoubleTapDetector
+    public let targetModifier: ModifierKey
     public private(set) var isMonitoring: Bool = false
 
     private var globalMonitor: Any?
@@ -12,8 +13,12 @@ public final class DoubleTapMonitor: DoubleTapMonitoring, @unchecked Sendable {
     private var triggerHandler: (@Sendable () -> Void)?
     private let lock = NSLock()
 
-    public init(detector: DoubleTapDetector = DoubleTapDetector(maxInterval: 0.3)) {
-        self.detector = detector
+    public init(
+        targetModifier: ModifierKey = .command,
+        detector: DoubleTapDetector? = nil
+    ) {
+        self.targetModifier = targetModifier
+        self.detector = detector ?? DoubleTapDetector(targetModifier: targetModifier, maxInterval: 0.3)
     }
 
     public func startMonitoring(onTrigger: @escaping @Sendable () -> Void) {
@@ -25,14 +30,14 @@ public final class DoubleTapMonitor: DoubleTapMonitoring, @unchecked Sendable {
         self.isMonitoring = true
         self.detector.reset()
 
-        // 1. 全局事件监听（当简贴处于后台，其他 App 为前台时）
+        // 1. 全局事件监听（当应用处于后台，其他 App 为前台时）
         self.globalMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.flagsChanged, .keyDown]
         ) { [weak self] event in
             self?.processEvent(event)
         }
 
-        // 2. 本地事件监听（当简贴自身窗口拥有焦点时）
+        // 2. 本地事件监听（当应用自身窗口拥有焦点时）
         self.localMonitor = NSEvent.addLocalMonitorForEvents(
             matching: [.flagsChanged, .keyDown]
         ) { [weak self] event in
@@ -69,13 +74,26 @@ public final class DoubleTapMonitor: DoubleTapMonitoring, @unchecked Sendable {
         switch event.type {
         case .flagsChanged:
             let flags = event.modifierFlags
-            let isCommand = flags.contains(.command)
-            let otherModifiers = flags.contains(.shift) ||
-                                 flags.contains(.control) ||
-                                 flags.contains(.option)
+            let isTarget: Bool
+            let otherModifiers: Bool
+
+            switch targetModifier {
+            case .command:
+                isTarget = flags.contains(.command)
+                otherModifiers = flags.contains(.shift) || flags.contains(.control) || flags.contains(.option)
+            case .option:
+                isTarget = flags.contains(.option)
+                otherModifiers = flags.contains(.shift) || flags.contains(.control) || flags.contains(.command)
+            case .control:
+                isTarget = flags.contains(.control)
+                otherModifiers = flags.contains(.shift) || flags.contains(.option) || flags.contains(.command)
+            case .shift:
+                isTarget = flags.contains(.shift)
+                otherModifiers = flags.contains(.control) || flags.contains(.option) || flags.contains(.command)
+            }
 
             let triggered = detector.handleFlagsChanged(
-                isCommandPressed: isCommand,
+                isTargetPressed: isTarget,
                 otherModifiersPressed: otherModifiers,
                 timestamp: timestamp
             )

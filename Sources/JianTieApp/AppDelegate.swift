@@ -30,6 +30,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.clipboardWindowController?.show(targetApp: target)
                 }
             },
+            dismissClipboardHandler: { [weak self] in
+                Task { @MainActor in
+                    self?.clipboardWindowController?.dismissAndRestoreFocus()
+                }
+            },
+            isClipboardVisibleHandler: { [weak self] in
+                self?.clipboardWindowController?.window?.isVisible == true
+            },
             presentPreferencesHandler: { [weak self] in
                 Task { @MainActor in
                     self?.preferencesWindowController?.showWindow()
@@ -49,7 +57,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences: UserDefaultsPreferences.shared,
             accessibilityService: AccessibilityPermissionService.shared,
             shelfEngine: coordinator.shelfEngine,
-            clipboardEngine: coordinator.clipboardEngine
+            clipboardEngine: coordinator.clipboardEngine,
+            hotKeyService: coordinator.hotKeyService
         )
         let preferencesController = PreferencesWindowController(viewModel: preferencesViewModel)
 

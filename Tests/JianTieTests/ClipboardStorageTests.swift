@@ -4,6 +4,7 @@ import XCTest
 private final class StorageTestPreferences: PreferencesProviding, @unchecked Sendable {
     var launchAtLogin: Bool = true
     var hasConfiguredLaunchAtLogin: Bool = true
+    var hotKeyTrigger: HotKeyTrigger = .default
     var shelfEdge: ShelfEdge = .left
     var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
     var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
@@ -164,6 +165,7 @@ final class ClipboardStorageTests: XCTestCase {
         final class CustomCapPrefs: PreferencesProviding, @unchecked Sendable {
             var launchAtLogin: Bool = true
             var hasConfiguredLaunchAtLogin: Bool = true
+            var hotKeyTrigger: HotKeyTrigger = .default
             var shelfEdge: ShelfEdge = .left
             var clipboardCapacityLimit: ClipboardCapacityLimit = .count50
             var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
