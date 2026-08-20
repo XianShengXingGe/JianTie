@@ -13,6 +13,7 @@ public final class AppCoordinator: NSObject {
     public let appActivator: AppActivating
     public let presentGuidanceHandler: () -> Void
     public let presentClipboardHandler: (@Sendable (AppTarget?) -> Void)?
+    public let presentPreferencesHandler: (@Sendable () -> Void)?
     private let statusItemProvider: () -> NSStatusItem?
 
     public private(set) var statusItem: NSStatusItem?
@@ -29,6 +30,7 @@ public final class AppCoordinator: NSObject {
         appActivator: AppActivating = SystemAppActivator.shared,
         presentGuidanceHandler: @escaping () -> Void = {},
         presentClipboardHandler: (@Sendable (AppTarget?) -> Void)? = nil,
+        presentPreferencesHandler: (@Sendable () -> Void)? = nil,
         statusItemProvider: @escaping () -> NSStatusItem? = {
             NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         }
@@ -42,6 +44,7 @@ public final class AppCoordinator: NSObject {
         self.appActivator = appActivator
         self.presentGuidanceHandler = presentGuidanceHandler
         self.presentClipboardHandler = presentClipboardHandler
+        self.presentPreferencesHandler = presentPreferencesHandler
         self.statusItemProvider = statusItemProvider
         super.init()
     }
@@ -108,7 +111,7 @@ public final class AppCoordinator: NSObject {
     }
 
     @objc public func openPreferences() {
-        // Issue #8 接入偏好设置面板
+        presentPreferencesHandler?()
     }
 
     @objc public func openAccessibilitySettings() {

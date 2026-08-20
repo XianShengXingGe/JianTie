@@ -56,47 +56,54 @@ private final class MockKeySynthesizer: KeyEventSynthesizing, @unchecked Sendabl
     }
 }
 
+private final class TestBox<T>: @unchecked Sendable {
+    var value: T
+    init(_ value: T) {
+        self.value = value
+    }
+}
+
 @MainActor
 final class AppCoordinatorTests: XCTestCase {
     func test_start_whenUntrusted_presentsAccessibilityGuidance() {
-        var guidancePresented = false
+        let guidancePresented = TestBox(false)
         let permissionService = AccessibilityPermissionService(
             isTrustedProvider: { false }
         )
         let coordinator = AppCoordinator(
             accessibilityService: permissionService,
             menuBuilder: StatusBarMenuBuilder(),
-            presentGuidanceHandler: { guidancePresented = true },
+            presentGuidanceHandler: { guidancePresented.value = true },
             statusItemProvider: { nil }
         )
 
         coordinator.start()
 
-        XCTAssertTrue(guidancePresented)
+        XCTAssertTrue(guidancePresented.value)
     }
 
     func test_start_whenTrusted_doesNotPresentAccessibilityGuidance() {
-        var guidancePresented = false
+        let guidancePresented = TestBox(false)
         let permissionService = AccessibilityPermissionService(
             isTrustedProvider: { true }
         )
         let coordinator = AppCoordinator(
             accessibilityService: permissionService,
             menuBuilder: StatusBarMenuBuilder(),
-            presentGuidanceHandler: { guidancePresented = true },
+            presentGuidanceHandler: { guidancePresented.value = true },
             statusItemProvider: { nil }
         )
 
         coordinator.start()
 
-        XCTAssertFalse(guidancePresented)
+        XCTAssertFalse(guidancePresented.value)
     }
 
     func test_handleAccessibilityAction_opensSettings() {
-        var settingsOpened = false
+        let settingsOpened = TestBox(false)
         let permissionService = AccessibilityPermissionService(
             isTrustedProvider: { false },
-            openSettingsHandler: { settingsOpened = true }
+            openSettingsHandler: { settingsOpened.value = true }
         )
         let coordinator = AppCoordinator(
             accessibilityService: permissionService,
@@ -107,7 +114,7 @@ final class AppCoordinatorTests: XCTestCase {
 
         coordinator.openAccessibilitySettings()
 
-        XCTAssertTrue(settingsOpened)
+        XCTAssertTrue(settingsOpened.value)
     }
 
     func test_start_startsClipboardMonitoring() {
@@ -132,9 +139,9 @@ final class AppCoordinatorTests: XCTestCase {
             statusItemProvider: { nil }
         )
 
-        var receivedTarget: AppTarget?
+        let receivedTarget = TestBox<AppTarget?>(nil)
         coordinator.onDoubleTapCommand = { target in
-            receivedTarget = target
+            receivedTarget.value = target
         }
 
         coordinator.start()
@@ -146,7 +153,7 @@ final class AppCoordinatorTests: XCTestCase {
         coordinator.handleDoubleTapCommand()
 
         XCTAssertEqual(coordinator.lastFrontmostApp, expectedTarget)
-        XCTAssertEqual(receivedTarget, expectedTarget)
+        XCTAssertEqual(receivedTarget.value, expectedTarget)
     }
 
     func test_pasteItem_delegatesToDirectPasteService() async {
@@ -186,18 +193,18 @@ final class AppCoordinatorTests: XCTestCase {
         let activator = MockAppActivator()
         activator.currentFrontmost = expectedTarget
 
-        var presentedTarget: AppTarget?
+        let presentedTarget = TestBox<AppTarget?>(nil)
         let coordinator = AppCoordinator(
             appActivator: activator,
             presentClipboardHandler: { target in
-                presentedTarget = target
+                presentedTarget.value = target
             },
             statusItemProvider: { nil }
         )
 
         coordinator.handleDoubleTapCommand()
 
-        XCTAssertEqual(presentedTarget, expectedTarget)
+        XCTAssertEqual(presentedTarget.value, expectedTarget)
     }
 
     func test_start_startsShelfMonitoring() {
@@ -210,5 +217,19 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertNotNil(coordinator.shelfEngine)
         XCTAssertTrue(coordinator.shelfEngine.dragMonitor.isMonitoring)
         XCTAssertTrue(coordinator.shelfEngine.edgeMonitor.isMonitoring)
+    }
+
+    func test_openPreferences_invokesPresentPreferencesHandler() {
+        let preferencesPresented = TestBox(false)
+        let coordinator = AppCoordinator(
+            presentPreferencesHandler: {
+                preferencesPresented.value = true
+            },
+            statusItemProvider: { nil }
+        )
+
+        coordinator.openPreferences()
+
+        XCTAssertTrue(preferencesPresented.value)
     }
 }

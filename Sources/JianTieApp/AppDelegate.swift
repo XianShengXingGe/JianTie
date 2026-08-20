@@ -6,6 +6,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appCoordinator: AppCoordinator?
     private var clipboardWindowController: ClipboardPanelWindowController?
     private var shelfWindowController: ShelfPanelWindowController?
+    private var preferencesWindowController: PreferencesWindowController?
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         // 配置为 Menu Bar Agent (不在 Dock 和 ⌘Tab 切换器中出现)
@@ -19,6 +20,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             presentClipboardHandler: { [weak self] target in
                 self?.clipboardWindowController?.show(targetApp: target)
+            },
+            presentPreferencesHandler: { [weak self] in
+                self?.preferencesWindowController?.showWindow()
             }
         )
 
@@ -30,8 +34,16 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let shelfController = ShelfPanelWindowController(engine: coordinator.shelfEngine)
 
+        let preferencesViewModel = PreferencesViewModel(
+            preferences: UserDefaultsPreferences.shared,
+            accessibilityService: AccessibilityPermissionService.shared,
+            shelfEngine: coordinator.shelfEngine
+        )
+        let preferencesController = PreferencesWindowController(viewModel: preferencesViewModel)
+
         self.clipboardWindowController = windowController
         self.shelfWindowController = shelfController
+        self.preferencesWindowController = preferencesController
         self.appCoordinator = coordinator
 
         coordinator.start()

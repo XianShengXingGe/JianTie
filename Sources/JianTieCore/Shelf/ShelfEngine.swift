@@ -49,7 +49,10 @@ public final class ShelfEngine: ObservableObject {
 
     @Published public var edge: ShelfEdge = .left {
         didSet {
+            guard oldValue != edge else { return }
             sharedState.edge = edge
+            preferences?.shelfEdge = edge
+            updateRevealedPositionForCurrentEdge()
         }
     }
 
@@ -62,6 +65,7 @@ public final class ShelfEngine: ObservableObject {
         return state.isDragging || isStackDragging || actionFeedback != nil
     }
 
+    public let preferences: PreferencesProviding?
     public let dragMonitor: DragMonitoring
     public let edgeMonitor: ShelfEdgeMonitor
     public let geometryCalculator: ShelfGeometryCalculator
@@ -78,7 +82,8 @@ public final class ShelfEngine: ObservableObject {
     private var feedbackTask: Task<Void, Never>?
 
     public init(
-        edge: ShelfEdge = .left,
+        edge: ShelfEdge? = nil,
+        preferences: PreferencesProviding? = nil,
         dragMonitor: DragMonitoring? = nil,
         edgeMonitor: ShelfEdgeMonitor? = nil,
         geometryCalculator: ShelfGeometryCalculator = ShelfGeometryCalculator(),
@@ -87,7 +92,10 @@ public final class ShelfEngine: ObservableObject {
         pasteboardWriter: PasteboardWriting? = nil,
         autoStart: Bool = true
     ) {
-        self.edge = edge
+        let actualPreferences = preferences ?? UserDefaultsPreferences.shared
+        self.preferences = actualPreferences
+        let initialEdge = edge ?? actualPreferences.shelfEdge
+        self.edge = initialEdge
         self.geometryCalculator = geometryCalculator
         self.pruner = pruner ?? ShelfPruner()
         #if canImport(AppKit)
@@ -97,7 +105,7 @@ public final class ShelfEngine: ObservableObject {
         self.airDropService = airDropService ?? MockAirDropFallback()
         self.pasteboardWriter = pasteboardWriter ?? MockPasteboardFallback()
         #endif
-        self.sharedState.edge = edge
+        self.sharedState.edge = initialEdge
         self.sharedState.isRevealed = false
 
         let actualDragMonitor = dragMonitor ?? FinderDragMonitor()
@@ -415,4 +423,37 @@ public final class ShelfEngine: ObservableObject {
         self.onStateChanged?(.hidden)
         self.activeScreen = nil
     }
+
+    private func updateRevealedPositionForCurrentEdge() {
+        guard state.isVisible else { return }
+        #if canImport(AppKit)
+        let screens = ScreenInfo.currentScreens()
+        #else
+        let screens: [ScreenInfo] = []
+        #endif
+        let screen = activeScreen ?? screens.first
+        guard let screen = screen else { return }
+
+        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
+        let isDragging: Bool
+        let newState: ShelfState
+        switch state {
+        case .stored:
+            newState = .stored(screenFrame: screen.frame, edge: edge)
+            isDragging = false
+        case .revealedEmpty:
+            newState = .revealedEmpty(screenFrame: screen.frame, edge: edge)
+            isDragging = false
+        case .revealedDragging:
+            newState = .revealedDragging(screenFrame: screen.frame, edge: edge)
+            isDragging = true
+        case .hidden:
+            return
+        }
+
+        self.state = newState
+        self.onStateChanged?(newState)
+        self.onRequestReveal?(visibleFrame, hiddenFrame, isDragging)
+    }
 }
+
