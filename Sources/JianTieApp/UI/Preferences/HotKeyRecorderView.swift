@@ -120,14 +120,14 @@ public struct HotKeyRecorderView: View {
                     }
                     .disabled(viewModel.isDefaultHotKey)
                 } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 13, weight: .medium))
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.secondary)
-                        .padding(4)
-                        .background(Circle().fill(Color.primary.opacity(0.04)))
+                        .padding(5)
+                        .background(Circle().fill(Color.primary.opacity(0.06)))
                 }
                 .menuStyle(.borderlessButton)
-                .frame(width: 22, height: 22)
+                .menuIndicator(.hidden)
                 .help("快捷键选项与双击预设")
             }
 
