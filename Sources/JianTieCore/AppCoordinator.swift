@@ -7,6 +7,7 @@ public final class AppCoordinator: NSObject {
     public let accessibilityService: AccessibilityPermissionProviding
     public let menuBuilder: StatusBarMenuBuilder
     public let clipboardEngine: ClipboardEngine
+    public let shelfEngine: ShelfEngine
     public let doubleTapMonitor: DoubleTapMonitoring
     public let directPasteService: DirectPasteService
     public let appActivator: AppActivating
@@ -22,6 +23,7 @@ public final class AppCoordinator: NSObject {
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
         menuBuilder: StatusBarMenuBuilder = StatusBarMenuBuilder(),
         clipboardEngine: ClipboardEngine? = nil,
+        shelfEngine: ShelfEngine? = nil,
         doubleTapMonitor: DoubleTapMonitoring = DoubleTapMonitor(),
         directPasteService: DirectPasteService = DirectPasteService(),
         appActivator: AppActivating = SystemAppActivator.shared,
@@ -34,6 +36,7 @@ public final class AppCoordinator: NSObject {
         self.accessibilityService = accessibilityService
         self.menuBuilder = menuBuilder
         self.clipboardEngine = clipboardEngine ?? ClipboardEngine(autoStart: false)
+        self.shelfEngine = shelfEngine ?? ShelfEngine(autoStart: false)
         self.doubleTapMonitor = doubleTapMonitor
         self.directPasteService = directPasteService
         self.appActivator = appActivator
@@ -47,6 +50,7 @@ public final class AppCoordinator: NSObject {
         setupStatusItem()
         checkAccessibilityOnLaunch()
         clipboardEngine.startMonitoring()
+        shelfEngine.startMonitoring()
         startHotKeyMonitoring()
     }
 

@@ -5,6 +5,7 @@ import JianTieCore
 public final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appCoordinator: AppCoordinator?
     private var clipboardWindowController: ClipboardPanelWindowController?
+    private var shelfWindowController: ShelfPanelWindowController?
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         // 配置为 Menu Bar Agent (不在 Dock 和 ⌘Tab 切换器中出现)
@@ -27,7 +28,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             appCoordinator: coordinator
         )
 
+        let shelfController = ShelfPanelWindowController(engine: coordinator.shelfEngine)
+
         self.clipboardWindowController = windowController
+        self.shelfWindowController = shelfController
         self.appCoordinator = coordinator
 
         coordinator.start()

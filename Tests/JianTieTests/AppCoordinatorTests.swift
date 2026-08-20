@@ -199,4 +199,16 @@ final class AppCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(presentedTarget, expectedTarget)
     }
+
+    func test_start_startsShelfMonitoring() {
+        let coordinator = AppCoordinator(
+            statusItemProvider: { nil }
+        )
+
+        coordinator.start()
+
+        XCTAssertNotNil(coordinator.shelfEngine)
+        XCTAssertTrue(coordinator.shelfEngine.dragMonitor.isMonitoring)
+        XCTAssertTrue(coordinator.shelfEngine.edgeMonitor.isMonitoring)
+    }
 }

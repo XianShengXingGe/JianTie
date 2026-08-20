@@ -1,0 +1,157 @@
+import Foundation
+import CoreGraphics
+#if canImport(AppKit)
+import AppKit
+#endif
+
+/// 系统级 Finder 文件拖拽监听器
+public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
+    public private(set) var isMonitoring: Bool = false
+    public private(set) var isDraggingActive: Bool = false
+
+    private var globalDragMonitor: Any?
+    private var globalMouseUpMonitor: Any?
+    private var localDragMonitor: Any?
+    private var localMouseUpMonitor: Any?
+
+    private var dragStartHandler: (@Sendable ([URL], CGPoint) -> Void)?
+    private var dragEndHandler: (@Sendable () -> Void)?
+
+    private let dragPasteboardReader: @Sendable () -> [URL]
+    private var lastObservedChangeCount: Int = -1
+    private let lock = NSLock()
+
+    public init(
+        dragPasteboardReader: @escaping @Sendable () -> [URL] = {
+            #if canImport(AppKit)
+            let pboard = NSPasteboard(name: .drag)
+            guard let items = pboard.pasteboardItems, !items.isEmpty else { return [] }
+            // 检查是否包含文件类型
+            let hasFiles = pboard.types?.contains(where: {
+                $0 == .fileURL ||
+                $0.rawValue == "NSFilenamesPboardType" ||
+                $0.rawValue == "com.apple.finder.node"
+            }) ?? false
+
+            guard hasFiles else { return [] }
+            return pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] ?? []
+            #else
+            return []
+            #endif
+        }
+    ) {
+        self.dragPasteboardReader = dragPasteboardReader
+    }
+
+    public func startMonitoring(
+        onDragStart: @escaping @Sendable ([URL], CGPoint) -> Void,
+        onDragEnd: @escaping @Sendable () -> Void
+    ) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard !isMonitoring else { return }
+        self.dragStartHandler = onDragStart
+        self.dragEndHandler = onDragEnd
+        self.isMonitoring = true
+        self.isDraggingActive = false
+
+        #if canImport(AppKit)
+        // 1. 全局监听拖拽与鼠标释放
+        self.globalDragMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDragged]
+        ) { [weak self] event in
+            self?.processDragEvent(location: NSEvent.mouseLocation)
+        }
+
+        self.globalMouseUpMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseUp]
+        ) { [weak self] _ in
+            self?.processMouseUpEvent()
+        }
+
+        // 2. 本地事件监听
+        self.localDragMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDragged]
+        ) { [weak self] event in
+            self?.processDragEvent(location: NSEvent.mouseLocation)
+            return event
+        }
+
+        self.localMouseUpMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseUp]
+        ) { [weak self] event in
+            self?.processMouseUpEvent()
+            return event
+        }
+        #endif
+    }
+
+    public func stopMonitoring() {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard isMonitoring else { return }
+
+        #if canImport(AppKit)
+        if let monitor = globalDragMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalDragMonitor = nil
+        }
+        if let monitor = globalMouseUpMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMouseUpMonitor = nil
+        }
+        if let monitor = localDragMonitor {
+            NSEvent.removeMonitor(monitor)
+            localDragMonitor = nil
+        }
+        if let monitor = localMouseUpMonitor {
+            NSEvent.removeMonitor(monitor)
+            localMouseUpMonitor = nil
+        }
+        #endif
+
+        dragStartHandler = nil
+        dragEndHandler = nil
+        isMonitoring = false
+        isDraggingActive = false
+    }
+
+    /// 处理拖拽事件
+    public func processDragEvent(location: CGPoint) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard isMonitoring else { return }
+
+        if !isDraggingActive {
+            let urls = dragPasteboardReader()
+            if !urls.isEmpty {
+                isDraggingActive = true
+                let startCallback = dragStartHandler
+                DispatchQueue.main.async {
+                    startCallback?(urls, location)
+                }
+            }
+        }
+    }
+
+    /// 处理鼠标释放事件
+    public func processMouseUpEvent() {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard isMonitoring, isDraggingActive else { return }
+
+        isDraggingActive = false
+        let endCallback = dragEndHandler
+        DispatchQueue.main.async {
+            endCallback?()
+        }
+    }
+
+    deinit {
+        stopMonitoring()
+    }
+}
