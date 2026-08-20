@@ -14,6 +14,13 @@
     <string>zh_CN</string>
     <key>CFBundleAllowMixedLocalizations</key>
     <true/>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>zh-Hans</string>
+        <string>zh_CN</string>
+        <string>zh</string>
+        <string>en</string>
+    </array>
     <key>LSHasLocalizedDisplayName</key>
     <true/>
     <key>CFBundlePackageType</key>
