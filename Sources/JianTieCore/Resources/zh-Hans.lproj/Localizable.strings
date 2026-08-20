@@ -1,0 +1,67 @@
+/* Status Bar Menu */
+"menu.about" = "关于 简贴";
+"menu.preferences" = "偏好设置...";
+"menu.quit" = "退出 简贴";
+
+/* Languages */
+"language.system" = "跟随系统 (System Default)";
+"language.zhHans" = "简体中文 (Simplified Chinese)";
+"language.en" = "English";
+
+/* Preferences */
+"preferences.window_title" = "偏好设置";
+"preferences.close_tooltip" = "关闭设置窗口 (ESC)";
+"preferences.app_name" = "简贴";
+"preferences.app_tagline" = "轻量、极简的 macOS 文件暂存与剪贴板工具";
+"preferences.section.general" = "通用设置 (General)";
+"preferences.launch_at_login" = "开机自启 (随系统启动)";
+"preferences.launch_at_login_desc" = "登录 macOS 系统时自动在后台启动简贴并常驻菜单栏。";
+"preferences.language" = "界面语言 (Language)";
+"preferences.language_desc" = "更改界面语言后将实时应用至所有窗口与菜单栏，无需重启应用。";
+
+"preferences.section.shelf" = "暂存架 (Shelf)";
+"preferences.shelf_edge" = "屏幕停靠边缘";
+"preferences.shelf_edge_left" = "屏幕左侧";
+"preferences.shelf_edge_right" = "屏幕右侧";
+"preferences.shelf_desc" = "文件拖拽至屏幕边缘或鼠标贴边悬停 150ms 时滑出暂存架，设置变更实时生效。";
+
+"preferences.section.clipboard" = "剪贴板历史 (Clipboard)";
+"preferences.hotkey" = "全局唤出快捷键";
+"preferences.hotkey_desc" = "支持点击录制或选择双击修饰键";
+"preferences.capacity_limit" = "历史容量上限";
+"preferences.retention_period" = "保存过期周期";
+"preferences.clipboard_retention_desc" = "支持智能文本与图片 (SHA-256) 去重前置。超出容量将按先进先出 (FIFO) 自动淘汰，超期条目自动修剪。";
+"preferences.clear_history" = "清空历史记录";
+"preferences.clear_history_desc" = "完全清除所有剪贴板记录与本地图片缓存";
+"preferences.clear_history_button" = "清空剪贴板内容";
+"preferences.clear_alert_title" = "确定要清空所有剪贴板历史吗？";
+"preferences.clear_alert_message" = "此操作将完全清除内存与磁盘中的所有剪贴板历史记录及图片缓存，且不可撤销。";
+"preferences.clear_alert_confirm" = "清空全部记录";
+"preferences.clear_alert_cancel" = "取消";
+
+"preferences.section.permissions" = "系统权限 (Permissions)";
+"preferences.accessibility" = "辅助功能 (Accessibility)";
+"preferences.accessibility_desc" = "直接回贴 (Direct Paste) 依赖辅助功能权限模拟按键";
+"preferences.authorized" = "已授权";
+"preferences.grant_permission" = "前往授权";
+
+"preferences.section.support" = "支持与互动 (Support & Community)";
+"preferences.support_dev" = "支持独立开发";
+"preferences.support_dev_desc" = "简贴为独立开发开源项目，期待你的鼓励与支持";
+"preferences.donate_button" = "打赏开发者";
+"preferences.donate_tooltip" = "打开打赏支持二维码弹窗";
+
+/* Capacity & Retention */
+"capacity.count50" = "50 条";
+"capacity.count100" = "100 条";
+"capacity.count300" = "300 条";
+"capacity.count500" = "500 条";
+"capacity.count1000" = "1,000 条";
+"capacity.unlimited" = "无限制";
+
+"retention.days1" = "1 天";
+"retention.days3" = "3 天";
+"retention.days7" = "7 天";
+"retention.days30" = "30 天";
+"retention.days90" = "90 天";
+"retention.unlimited" = "永久保存";

@@ -10,21 +10,27 @@ public final class StatusBarMenuBuilder: Sendable {
         target: AnyObject?,
         aboutAction: Selector? = nil,
         preferencesAction: Selector? = nil,
-        quitAction: Selector? = nil
+        quitAction: Selector? = nil,
+        localizationManager: LocalizationManager? = nil
     ) -> NSMenu {
+        let manager = localizationManager ?? LocalizationManager.shared
         let menu = NSMenu()
 
-        let aboutItem = NSMenuItem(title: "关于 简贴", action: aboutAction, keyEquivalent: "")
+        let aboutTitle = manager.string(forKey: "menu.about")
+        let preferencesTitle = manager.string(forKey: "menu.preferences")
+        let quitTitle = manager.string(forKey: "menu.quit")
+
+        let aboutItem = NSMenuItem(title: aboutTitle, action: aboutAction, keyEquivalent: "")
         aboutItem.target = target
         menu.addItem(aboutItem)
 
-        let preferencesItem = NSMenuItem(title: "偏好设置...", action: preferencesAction, keyEquivalent: ",")
+        let preferencesItem = NSMenuItem(title: preferencesTitle, action: preferencesAction, keyEquivalent: ",")
         preferencesItem.target = target
         menu.addItem(preferencesItem)
 
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "退出 简贴", action: quitAction, keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: quitTitle, action: quitAction, keyEquivalent: "q")
         quitItem.target = target
         menu.addItem(quitItem)
 

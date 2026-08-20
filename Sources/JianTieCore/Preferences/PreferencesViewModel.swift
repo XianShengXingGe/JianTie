@@ -33,21 +33,31 @@ public final class PreferencesViewModel: ObservableObject {
         }
     }
 
+    @Published public var appLanguage: AppLanguage {
+        didSet {
+            preferences.appLanguage = appLanguage
+            localizationManager.setLanguage(appLanguage)
+        }
+    }
+
     @Published public var showClearConfirmationAlert: Bool = false
     @Published public private(set) var isAccessibilityTrusted: Bool
 
     public let preferences: PreferencesProviding
     public let launchAtLoginService: LaunchAtLoginProviding
     public let accessibilityService: AccessibilityPermissionProviding
+    public let localizationManager: LocalizationManager
     public weak var shelfEngine: ShelfEngine?
     public weak var clipboardEngine: ClipboardEngine?
     public weak var hotKeyService: HotKeyServiceProviding?
     private let bundle: Bundle
+    private var cancellables = Set<AnyCancellable>()
 
     public init(
         preferences: PreferencesProviding = UserDefaultsPreferences.shared,
         launchAtLoginService: LaunchAtLoginProviding = LaunchAtLoginService.shared,
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
+        localizationManager: LocalizationManager? = nil,
         shelfEngine: ShelfEngine? = nil,
         clipboardEngine: ClipboardEngine? = nil,
         hotKeyService: HotKeyServiceProviding? = nil,
@@ -56,6 +66,7 @@ public final class PreferencesViewModel: ObservableObject {
         self.preferences = preferences
         self.launchAtLoginService = launchAtLoginService
         self.accessibilityService = accessibilityService
+        self.localizationManager = localizationManager ?? .shared
         self.shelfEngine = shelfEngine
         self.clipboardEngine = clipboardEngine
         self.hotKeyService = hotKeyService
@@ -65,7 +76,14 @@ public final class PreferencesViewModel: ObservableObject {
         self.shelfEdge = preferences.shelfEdge
         self.clipboardCapacityLimit = preferences.clipboardCapacityLimit
         self.clipboardRetentionPeriod = preferences.clipboardRetentionPeriod
+        self.appLanguage = preferences.appLanguage
         self.isAccessibilityTrusted = accessibilityService.isTrusted
+
+        NotificationCenter.default.publisher(for: .appLanguageDidChange)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     /// 应用版本描述信息
@@ -80,7 +98,13 @@ public final class PreferencesViewModel: ObservableObject {
 
     /// 剪贴板历史保留容量说明
     public var clipboardRetentionDescription: String {
-        return "支持智能文本与图片 (SHA-256) 去重前置。超出容量将按先进先出 (FIFO) 自动淘汰，超期条目自动修剪。"
+        return localizationManager.string(forKey: "preferences.clipboard_retention_desc")
+    }
+
+    /// 设置应用界面语言
+    public func setAppLanguage(_ language: AppLanguage) {
+        guard self.appLanguage != language else { return }
+        self.appLanguage = language
     }
 
     /// 设置开机自启（随系统启动）

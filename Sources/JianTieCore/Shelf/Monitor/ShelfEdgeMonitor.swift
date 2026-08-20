@@ -16,6 +16,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
 
     private let screensProvider: @Sendable () -> [ScreenInfo]
     private let edgeProvider: @Sendable () -> ShelfEdge
+    private let verticalPercentProvider: @Sendable () -> CGFloat
     private let isRevealedProvider: @Sendable () -> Bool
     private let shelfFrameProvider: @Sendable () -> CGRect?
 
@@ -27,12 +28,14 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
             return ScreenInfo.currentScreens()
         },
         edgeProvider: @escaping @Sendable () -> ShelfEdge = { .left },
+        verticalPercentProvider: @escaping @Sendable () -> CGFloat = { 0.5 },
         isRevealedProvider: @escaping @Sendable () -> Bool = { false },
         shelfFrameProvider: @escaping @Sendable () -> CGRect? = { nil }
     ) {
         self.detector = detector
         self.screensProvider = screensProvider
         self.edgeProvider = edgeProvider
+        self.verticalPercentProvider = verticalPercentProvider
         self.isRevealedProvider = isRevealedProvider
         self.shelfFrameProvider = shelfFrameProvider
     }
@@ -103,6 +106,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
     public func processMouseMove(location: CGPoint, timestamp: TimeInterval) {
         let screens = screensProvider()
         let edge = edgeProvider()
+        let verticalPercent = verticalPercentProvider()
         let isRevealed = isRevealedProvider()
         let shelfFrame = shelfFrameProvider()
 
@@ -111,6 +115,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
             timestamp: timestamp,
             screens: screens,
             edge: edge,
+            verticalPercent: verticalPercent,
             isShelfRevealed: isRevealed,
             shelfFrame: shelfFrame
         )

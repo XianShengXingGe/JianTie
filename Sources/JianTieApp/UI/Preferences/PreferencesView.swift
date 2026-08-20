@@ -128,6 +128,32 @@ public struct PreferencesView: View {
                                 .toggleStyle(.switch)
                                 .labelsHidden()
                             }
+
+                            Divider()
+                                .background(Color.primary.opacity(0.06))
+
+                            HStack(alignment: .center, spacing: 16) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("界面语言 (Language)")
+                                        .font(.body)
+                                    Text("更改界面语言后将实时应用至所有窗口与菜单栏，无需重启应用。")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                }
+
+                                Spacer()
+
+                                Picker("", selection: Binding(
+                                    get: { viewModel.appLanguage },
+                                    set: { viewModel.setAppLanguage($0) }
+                                )) {
+                                    ForEach(AppLanguage.allCases) { lang in
+                                        Text(lang.displayName).tag(lang)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .frame(width: 170)
+                            }
                         }
                         .padding(14)
                         .liquidGlassSection(cornerRadius: 12)

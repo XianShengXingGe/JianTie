@@ -7,32 +7,22 @@ import AppKit
 final class SharedShelfState: @unchecked Sendable {
     private let lock = NSLock()
     private var _edge: ShelfEdge = .left
+    private var _verticalPercent: CGFloat = 0.5
     private var _isRevealed: Bool = false
 
     var edge: ShelfEdge {
-        get {
-            lock.lock()
-            defer { lock.unlock() }
-            return _edge
-        }
-        set {
-            lock.lock()
-            defer { lock.unlock() }
-            _edge = newValue
-        }
+        get { lock.lock(); defer { lock.unlock() }; return _edge }
+        set { lock.lock(); defer { lock.unlock() }; _edge = newValue }
+    }
+
+    var verticalPercent: CGFloat {
+        get { lock.lock(); defer { lock.unlock() }; return _verticalPercent }
+        set { lock.lock(); defer { lock.unlock() }; _verticalPercent = newValue }
     }
 
     var isRevealed: Bool {
-        get {
-            lock.lock()
-            defer { lock.unlock() }
-            return _isRevealed
-        }
-        set {
-            lock.lock()
-            defer { lock.unlock() }
-            _isRevealed = newValue
-        }
+        get { lock.lock(); defer { lock.unlock() }; return _isRevealed }
+        set { lock.lock(); defer { lock.unlock() }; _isRevealed = newValue }
     }
 }
 
@@ -50,6 +40,20 @@ public final class ShelfEngine: ObservableObject {
             guard oldValue != edge else { return }
             sharedState.edge = edge
             preferences?.shelfEdge = edge
+            updateRevealedPositionForCurrentEdge()
+        }
+    }
+
+    @Published public var verticalPercent: CGFloat = 0.5 {
+        didSet {
+            let clamped = min(max(verticalPercent, 0.0), 1.0)
+            if clamped != verticalPercent {
+                verticalPercent = clamped
+                return
+            }
+            guard oldValue != verticalPercent else { return }
+            sharedState.verticalPercent = verticalPercent
+            preferences?.shelfVerticalPercent = Double(verticalPercent)
             updateRevealedPositionForCurrentEdge()
         }
     }
@@ -82,6 +86,7 @@ public final class ShelfEngine: ObservableObject {
 
     public init(
         edge: ShelfEdge? = nil,
+        verticalPercent: CGFloat? = nil,
         preferences: PreferencesProviding? = nil,
         dragMonitor: DragMonitoring? = nil,
         edgeMonitor: ShelfEdgeMonitor? = nil,
@@ -96,12 +101,15 @@ public final class ShelfEngine: ObservableObject {
         self.preferences = actualPreferences
         let initialEdge = edge ?? actualPreferences.shelfEdge
         self.edge = initialEdge
+        let initialVerticalPercent = verticalPercent ?? CGFloat(actualPreferences.shelfVerticalPercent)
+        self.verticalPercent = initialVerticalPercent
         self.geometryCalculator = geometryCalculator
         self.pruner = pruner ?? ShelfPruner()
         self.airDropService = airDropService ?? SystemAirDropService()
         self.pasteboardWriter = pasteboardWriter ?? SystemPasteboardWriter()
         self.screensProvider = screensProvider
         self.sharedState.edge = initialEdge
+        self.sharedState.verticalPercent = initialVerticalPercent
         self.sharedState.isRevealed = false
 
         let actualDragMonitor = dragMonitor ?? FinderDragMonitor()
@@ -112,6 +120,7 @@ public final class ShelfEngine: ObservableObject {
         let actualEdgeMonitor = edgeMonitor ?? ShelfEdgeMonitor(
             screensProvider: capturedScreens,
             edgeProvider: { capturedShared.edge },
+            verticalPercentProvider: { capturedShared.verticalPercent },
             isRevealedProvider: { capturedShared.isRevealed }
         )
         self.edgeMonitor = actualEdgeMonitor
@@ -206,7 +215,11 @@ public final class ShelfEngine: ObservableObject {
         }
 
         if let screen = screen {
-            let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
+            let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(
+                screen: screen,
+                edge: edge,
+                verticalPercent: verticalPercent
+            )
             let newState = ShelfState.stored(screenFrame: screen.frame, edge: edge)
             self.state = newState
             self.onStateChanged?(newState)
@@ -339,7 +352,11 @@ public final class ShelfEngine: ObservableObject {
             self.activeScreen = screen
         }
 
-        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: targetScreen, edge: edge)
+        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(
+            screen: targetScreen,
+            edge: edge,
+            verticalPercent: verticalPercent
+        )
 
         let newState = ShelfState.revealedDragging(screenFrame: targetScreen.frame, edge: edge)
         self.state = newState
@@ -367,7 +384,11 @@ public final class ShelfEngine: ObservableObject {
         guard state == .hidden else { return }
 
         self.activeScreen = screen
-        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
+        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(
+            screen: screen,
+            edge: edge,
+            verticalPercent: verticalPercent
+        )
 
         let newState: ShelfState
         if stacks.isEmpty {
@@ -399,6 +420,16 @@ public final class ShelfEngine: ObservableObject {
         edgeMonitor.notifyMouseExitedShelf()
     }
 
+    /// 交互式拖拽吸附更新 Shelf 停靠位置
+    public func updatePosition(edge newEdge: ShelfEdge? = nil, verticalPercent newVerticalPercent: CGFloat? = nil) {
+        if let newEdge = newEdge {
+            self.edge = newEdge
+        }
+        if let newVerticalPercent = newVerticalPercent {
+            self.verticalPercent = newVerticalPercent
+        }
+    }
+
     /// 收回并隐藏 Shelf
     public func dismiss() {
         guard state.isVisible else { return }
@@ -406,7 +437,11 @@ public final class ShelfEngine: ObservableObject {
         let screen = activeScreen ?? screensProvider().first
 
         if let screen = screen {
-            let (_, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
+            let (_, hiddenFrame) = geometryCalculator.calculateWindowFrames(
+                screen: screen,
+                edge: edge,
+                verticalPercent: verticalPercent
+            )
             self.onRequestHide?(hiddenFrame)
         }
 
@@ -421,7 +456,11 @@ public final class ShelfEngine: ObservableObject {
         let screen = activeScreen ?? screens.first
         guard let screen = screen else { return }
 
-        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
+        let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(
+            screen: screen,
+            edge: edge,
+            verticalPercent: verticalPercent
+        )
         let isDragging: Bool
         let newState: ShelfState
         switch state {

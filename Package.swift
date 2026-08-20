@@ -21,7 +21,8 @@ let package = Package(
     targets: [
         .target(
             name: "JianTieCore",
-            dependencies: []
+            dependencies: [],
+            resources: [.process("Resources")]
         ),
         .executableTarget(
             name: "JianTieApp",

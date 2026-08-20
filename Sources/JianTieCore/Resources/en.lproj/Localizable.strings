@@ -1,0 +1,67 @@
+/* Status Bar Menu */
+"menu.about" = "About JianTie";
+"menu.preferences" = "Preferences...";
+"menu.quit" = "Quit JianTie";
+
+/* Languages */
+"language.system" = "跟随系统 (System Default)";
+"language.zhHans" = "简体中文 (Simplified Chinese)";
+"language.en" = "English";
+
+/* Preferences */
+"preferences.window_title" = "Preferences";
+"preferences.close_tooltip" = "Close Settings Window (ESC)";
+"preferences.app_name" = "JianTie";
+"preferences.app_tagline" = "Lightweight, minimal macOS file staging & clipboard utility";
+"preferences.section.general" = "General Settings (General)";
+"preferences.launch_at_login" = "Launch at Login";
+"preferences.launch_at_login_desc" = "Automatically start JianTie in the background and stay in the menu bar when logging into macOS.";
+"preferences.language" = "App Language (Language)";
+"preferences.language_desc" = "Changes to the app language take effect immediately across all windows and menus without restarting.";
+
+"preferences.section.shelf" = "Shelf (Shelf)";
+"preferences.shelf_edge" = "Screen Docking Edge";
+"preferences.shelf_edge_left" = "Left Edge";
+"preferences.shelf_edge_right" = "Right Edge";
+"preferences.shelf_desc" = "Shelf slides out when files are dragged to screen edge or cursor hovers for 150ms. Changes take effect in real time.";
+
+"preferences.section.clipboard" = "Clipboard History (Clipboard)";
+"preferences.hotkey" = "Global Shortcut";
+"preferences.hotkey_desc" = "Click to record shortcut or select double-tap modifier";
+"preferences.capacity_limit" = "History Capacity Limit";
+"preferences.retention_period" = "Retention Period";
+"preferences.clipboard_retention_desc" = "Supports smart text & image (SHA-256) deduplication. Old items are pruned via FIFO when exceeding capacity, expired items are pruned automatically.";
+"preferences.clear_history" = "Clear History";
+"preferences.clear_history_desc" = "Permanently delete all clipboard history and local image caches";
+"preferences.clear_history_button" = "Clear Clipboard History";
+"preferences.clear_alert_title" = "Are you sure you want to clear all clipboard history?";
+"preferences.clear_alert_message" = "This action will permanently remove all clipboard history and image caches from memory and disk. This cannot be undone.";
+"preferences.clear_alert_confirm" = "Clear All";
+"preferences.clear_alert_cancel" = "Cancel";
+
+"preferences.section.permissions" = "System Permissions (Permissions)";
+"preferences.accessibility" = "Accessibility (Accessibility)";
+"preferences.accessibility_desc" = "Direct Paste relies on Accessibility permission to simulate paste keystrokes";
+"preferences.authorized" = "Authorized";
+"preferences.grant_permission" = "Grant Permission";
+
+"preferences.section.support" = "Support & Community (Support & Community)";
+"preferences.support_dev" = "Support Independent Development";
+"preferences.support_dev_desc" = "JianTie is an indie open-source project. Your encouragement and support are greatly appreciated.";
+"preferences.donate_button" = "Buy Me a Coffee";
+"preferences.donate_tooltip" = "Open donation QR code popup";
+
+/* Capacity & Retention */
+"capacity.count50" = "50 items";
+"capacity.count100" = "100 items";
+"capacity.count300" = "300 items";
+"capacity.count500" = "500 items";
+"capacity.count1000" = "1,000 items";
+"capacity.unlimited" = "Unlimited";
+
+"retention.days1" = "1 Day";
+"retention.days3" = "3 Days";
+"retention.days7" = "7 Days";
+"retention.days30" = "30 Days";
+"retention.days90" = "90 Days";
+"retention.unlimited" = "Forever";

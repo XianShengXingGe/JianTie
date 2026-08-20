@@ -9,8 +9,10 @@ public final class UserDefaultsPreferences: PreferencesProviding, @unchecked Sen
         public static let hasConfiguredLaunchAtLogin = "jiantie.general.hasConfiguredLaunchAtLogin"
         public static let hotKeyTrigger = "jiantie.hotkey.trigger"
         public static let shelfEdge = "jiantie.shelf.edge"
+        public static let shelfVerticalPercent = "jiantie.shelf.verticalPercent"
         public static let clipboardCapacityLimit = "jiantie.clipboard.capacityLimit"
         public static let clipboardRetentionPeriod = "jiantie.clipboard.retentionPeriod"
+        public static let appLanguage = "jiantie.general.appLanguage"
     }
 
     private let userDefaults: UserDefaults
@@ -88,6 +90,22 @@ public final class UserDefaultsPreferences: PreferencesProviding, @unchecked Sen
         }
     }
 
+    public var shelfVerticalPercent: Double {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            guard userDefaults.object(forKey: Keys.shelfVerticalPercent) != nil else {
+                return 0.5
+            }
+            return userDefaults.double(forKey: Keys.shelfVerticalPercent)
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            userDefaults.set(newValue, forKey: Keys.shelfVerticalPercent)
+        }
+    }
+
     public var clipboardCapacityLimit: ClipboardCapacityLimit {
         get {
             lock.lock()
@@ -119,6 +137,23 @@ public final class UserDefaultsPreferences: PreferencesProviding, @unchecked Sen
             lock.lock()
             defer { lock.unlock() }
             userDefaults.set(newValue.rawValue, forKey: Keys.clipboardRetentionPeriod)
+        }
+    }
+
+    public var appLanguage: AppLanguage {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            guard let rawValue = userDefaults.string(forKey: Keys.appLanguage),
+                  let language = AppLanguage(rawValue: rawValue) else {
+                return .system
+            }
+            return language
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            userDefaults.set(newValue.rawValue, forKey: Keys.appLanguage)
         }
     }
 }

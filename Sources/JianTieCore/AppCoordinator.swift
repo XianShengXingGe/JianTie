@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import Combine
 
 /// 核心应用协调器，管理生命周期、权限状态、系统状态栏与全局快捷键调度
 @MainActor
@@ -7,6 +8,7 @@ public final class AppCoordinator: NSObject {
     public let preferences: PreferencesProviding
     public let launchAtLoginService: LaunchAtLoginProviding
     public let accessibilityService: AccessibilityPermissionProviding
+    public let localizationManager: LocalizationManager
     public let menuBuilder: StatusBarMenuBuilder
     public let clipboardEngine: ClipboardEngine
     public let shelfEngine: ShelfEngine
@@ -19,6 +21,7 @@ public final class AppCoordinator: NSObject {
     public let isClipboardVisibleHandler: (@Sendable () -> Bool)?
     public let presentPreferencesHandler: (@Sendable () -> Void)?
     private let statusItemProvider: () -> NSStatusItem?
+    private var cancellables = Set<AnyCancellable>()
 
     public private(set) var statusItem: NSStatusItem?
     public private(set) var lastFrontmostApp: AppTarget?
@@ -28,6 +31,7 @@ public final class AppCoordinator: NSObject {
         preferences: PreferencesProviding = UserDefaultsPreferences.shared,
         launchAtLoginService: LaunchAtLoginProviding = LaunchAtLoginService.shared,
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
+        localizationManager: LocalizationManager? = nil,
         menuBuilder: StatusBarMenuBuilder = StatusBarMenuBuilder(),
         clipboardEngine: ClipboardEngine? = nil,
         shelfEngine: ShelfEngine? = nil,
@@ -46,6 +50,7 @@ public final class AppCoordinator: NSObject {
         self.preferences = preferences
         self.launchAtLoginService = launchAtLoginService
         self.accessibilityService = accessibilityService
+        self.localizationManager = localizationManager ?? LocalizationManager.shared
         self.menuBuilder = menuBuilder
         self.clipboardEngine = clipboardEngine ?? ClipboardEngine(autoStart: false)
         self.shelfEngine = shelfEngine ?? ShelfEngine(autoStart: false)
@@ -122,10 +127,29 @@ public final class AppCoordinator: NSObject {
                 target: self,
                 aboutAction: #selector(showAbout),
                 preferencesAction: #selector(openPreferences),
-                quitAction: #selector(quit)
+                quitAction: #selector(quit),
+                localizationManager: localizationManager
             )
             self.statusItem = item
+
+            NotificationCenter.default.publisher(for: .appLanguageDidChange)
+                .sink { [weak self] _ in
+                    self?.refreshStatusMenu()
+                }
+                .store(in: &cancellables)
         }
+    }
+
+    /// 刷新状态栏菜单（在语言切换时更新菜单项文案）
+    public func refreshStatusMenu() {
+        guard let statusItem = statusItem else { return }
+        statusItem.menu = menuBuilder.buildMenu(
+            target: self,
+            aboutAction: #selector(showAbout),
+            preferencesAction: #selector(openPreferences),
+            quitAction: #selector(quit),
+            localizationManager: localizationManager
+        )
     }
 
     @objc public func showAbout() {

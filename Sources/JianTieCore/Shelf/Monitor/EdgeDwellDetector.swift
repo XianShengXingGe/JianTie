@@ -35,6 +35,7 @@ public final class EdgeDwellDetector: @unchecked Sendable {
     ///   - timestamp: 当前时间戳（秒）
     ///   - screens: 所有显示器列表
     ///   - edge: 停靠边缘
+    ///   - verticalPercent: 垂直停靠比例 (0.0 ~ 1.0)
     ///   - isShelfRevealed: 当前 Shelf 是否处于展示状态
     ///   - shelfFrame: 如果已展示，当前 Shelf 窗口的物理 Frame
     /// - Returns: 需要执行的动作（如唤出、缩回或无动作）
@@ -43,6 +44,7 @@ public final class EdgeDwellDetector: @unchecked Sendable {
         timestamp: TimeInterval,
         screens: [ScreenInfo],
         edge: ShelfEdge,
+        verticalPercent: CGFloat = 0.5,
         isShelfRevealed: Bool,
         shelfFrame: CGRect? = nil
     ) -> Action {
@@ -52,7 +54,13 @@ public final class EdgeDwellDetector: @unchecked Sendable {
             return .none
         }
 
-        let inEdgeZone = geometryCalculator.isPointInEdgeTriggerZone(point: point, screen: screen, edge: edge)
+        let inEdgeZone = geometryCalculator.isPointInEdgeTriggerZone(
+            point: point,
+            screen: screen,
+            edge: edge,
+            verticalPercent: verticalPercent,
+            isFinderDrag: false
+        )
         let inShelfWindow = shelfFrame?.contains(point) ?? false
 
         if isShelfRevealed {

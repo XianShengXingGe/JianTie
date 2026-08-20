@@ -62,23 +62,40 @@ public struct ShelfGeometryCalculator: Sendable {
     ///   - point: 鼠标绝对坐标
     ///   - screen: 目标屏幕
     ///   - edge: 停靠边缘 (左侧 / 右侧)
+    ///   - verticalPercent: Shelf 垂直停靠比例 (0.0 ~ 1.0，默认 0.5)
+    ///   - isFinderDrag: 是否为 Finder 文件拖拽操作（拖拽时全屏幕边缘有效，悬停停留时仅限 Shelf 垂直范围 ±20px）
+    ///   - tolerance: 悬停触发的垂直高度容错边距（默认 20.0px）
     /// - Returns: 是否在边缘判定区内
     public func isPointInEdgeTriggerZone(
         point: CGPoint,
         screen: ScreenInfo,
-        edge: ShelfEdge
+        edge: ShelfEdge,
+        verticalPercent: CGFloat = 0.5,
+        isFinderDrag: Bool = false,
+        tolerance: CGFloat = 20.0
     ) -> Bool {
         let frame = screen.frame
-        // Y 轴必须在屏幕高度范围内（允许适度容错）
-        guard point.y >= frame.minY && point.y <= frame.maxY else {
-            return false
-        }
 
+        // 1. 水平 X 轴边缘判定
+        let isXInEdge: Bool
         switch edge {
         case .left:
-            return point.x >= frame.minX - 1.0 && point.x <= frame.minX + edgeTriggerThreshold
+            isXInEdge = point.x >= frame.minX - 1.0 && point.x <= frame.minX + edgeTriggerThreshold
         case .right:
-            return point.x >= frame.maxX - edgeTriggerThreshold && point.x <= frame.maxX + 1.0
+            isXInEdge = point.x >= frame.maxX - edgeTriggerThreshold && point.x <= frame.maxX + 1.0
+        }
+        guard isXInEdge else { return false }
+
+        // 2. 垂直 Y 轴限位判定
+        if isFinderDrag {
+            // Finder 文件拖拽：全屏边缘高度均可轻松触发
+            return point.y >= frame.minY && point.y <= frame.maxY
+        } else {
+            // 鼠标边缘悬停：严格限位在 Shelf 实际高度区域 ± 20px
+            let targetY = calculateTargetY(visibleBounds: screen.visibleFrame, verticalPercent: verticalPercent)
+            let minY = targetY - tolerance
+            let maxY = targetY + windowSize.height + tolerance
+            return point.y >= minY && point.y <= maxY
         }
     }
 
@@ -86,13 +103,15 @@ public struct ShelfGeometryCalculator: Sendable {
     /// - Parameters:
     ///   - screen: 目标屏幕
     ///   - edge: 停靠边缘
+    ///   - verticalPercent: Shelf 垂直停靠比例 (0.0 ~ 1.0，默认 0.5)
     /// - Returns: (visibleFrame: 滑入后的最终展示位置, hiddenFrame: 缩回/滑入起始位置，严格限制在当前屏幕边界内以防多屏溢出)
     public func calculateWindowFrames(
         screen: ScreenInfo,
-        edge: ShelfEdge
+        edge: ShelfEdge,
+        verticalPercent: CGFloat = 0.5
     ) -> (visibleFrame: CGRect, hiddenFrame: CGRect) {
         let visibleBounds = screen.visibleFrame
-        let targetY = visibleBounds.midY - windowSize.height / 2
+        let targetY = calculateTargetY(visibleBounds: visibleBounds, verticalPercent: verticalPercent)
 
         switch edge {
         case .left:
@@ -109,6 +128,12 @@ public struct ShelfGeometryCalculator: Sendable {
             let hidden = CGRect(x: hiddenX, y: targetY, width: windowSize.width, height: windowSize.height)
             return (visible, hidden)
         }
+    }
+
+    private func calculateTargetY(visibleBounds: CGRect, verticalPercent: CGFloat) -> CGFloat {
+        let clampedPercent = min(max(verticalPercent, 0.0), 1.0)
+        let availableHeight = max(0, visibleBounds.height - windowSize.height)
+        return visibleBounds.minY + availableHeight * clampedPercent
     }
 
     /// 计算 Shelf 悬浮卡片对应的富信息浮层屏幕坐标

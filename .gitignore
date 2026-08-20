@@ -10,7 +10,6 @@ DerivedData/
 *.dmg
 *.zip
 * 2.*
-Tests/
 docs/spec/
 *需求*.md
 简贴需求文档.md
