@@ -23,14 +23,6 @@ public struct ShelfPanelView: View {
 
     public var body: some View {
         VStack(spacing: 6) {
-            // 顶部专属拖拽手柄条
-            ShelfGrabberView(
-                isDragging: engine.isPanelDragging,
-                onDragStart: onPanelDragStart,
-                onDragMove: onPanelDragMove,
-                onDragEnd: onPanelDragEnd
-            )
-
             if engine.stacks.isEmpty {
                 emptyStateView
             } else {
@@ -44,6 +36,19 @@ public struct ShelfPanelView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                .onChanged { _ in
+                    if !engine.isPanelDragging {
+                        onPanelDragStart?()
+                    }
+                    onPanelDragMove?()
+                }
+                .onEnded { _ in
+                    onPanelDragEnd?()
+                }
+        )
         .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
         .opacity(engine.isPanelDragging ? 0.92 : 1.0)
         .shadow(
@@ -123,6 +128,7 @@ public struct ShelfPanelView: View {
                         .foregroundColor(.primary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
             } else {
                 // 空 Shelf 悬停唤出时的极简占位
                 VStack(spacing: 8) {
@@ -135,6 +141,7 @@ public struct ShelfPanelView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
             }
         }
     }
