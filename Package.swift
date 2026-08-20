@@ -1,0 +1,35 @@
+// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "JianTie",
+    platforms: [
+        .macOS(.v13)
+    ],
+    products: [
+        .library(
+            name: "JianTieCore",
+            targets: ["JianTieCore"]
+        ),
+        .executable(
+            name: "JianTie",
+            targets: ["JianTieApp"]
+        )
+    ],
+    dependencies: [],
+    targets: [
+        .target(
+            name: "JianTieCore",
+            dependencies: []
+        ),
+        .executableTarget(
+            name: "JianTieApp",
+            dependencies: ["JianTieCore"],
+            exclude: ["Info.plist"]
+        ),
+        .testTarget(
+            name: "JianTieTests",
+            dependencies: ["JianTieCore"]
+        )
+    ]
+)
