@@ -10,7 +10,10 @@ DerivedData/
 *.dmg
 *.zip
 * 2.*
-docs/spec/
+docs/
+Tests/
+AGENTS.md
+CONTEXT.md
 *需求*.md
 简贴需求文档.md
 .baoyu-skills/
