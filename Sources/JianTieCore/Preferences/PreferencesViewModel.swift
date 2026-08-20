@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import Combine
 
 /// 偏好设置视图模型，管理 Shelf 边缘配置、剪贴板容量生命周期、全局快捷键、权限状态与版本展示
@@ -84,15 +85,25 @@ public final class PreferencesViewModel: ObservableObject {
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                self?.refreshStatus()
+            }
+            .store(in: &cancellables)
+
+        // 周期性动态轮询权限与系统状态，确保在系统设置授权后界面秒级自动变绿
+        Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.refreshAccessibilityStatus()
+            }
+            .store(in: &cancellables)
     }
 
-    /// 应用版本描述信息
+    /// 应用版本描述信息 (纯版本号，如 v1.1.0)
     public var appVersionText: String {
-        let shortVersion = bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
-        let buildVersion = bundle.infoDictionary?["CFBundleVersion"] as? String
-        if let build = buildVersion, !build.isEmpty, build != shortVersion {
-            return "v\(shortVersion) (\(build))"
-        }
+        let shortVersion = bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0"
         return "v\(shortVersion)"
     }
 
@@ -186,5 +197,12 @@ public final class PreferencesViewModel: ObservableObject {
     public func openAccessibilitySettings() {
         accessibilityService.promptForPermission()
         accessibilityService.openSystemAccessibilitySettings()
+    }
+
+    /// 在默认浏览器中打开 GitHub 最新 Release 页面
+    public func openLatestRelease() {
+        if let url = URL(string: "https://github.com/XianShengXingGe/JianTie/releases/latest") {
+            NSWorkspace.shared.open(url)
+        }
     }
 }

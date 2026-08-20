@@ -18,14 +18,8 @@ public struct PreferencesView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            // Window Title & Drag Bar
-            HStack {
-                Text(L10n.tr("preferences.window_title"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.secondary)
-
-                Spacer()
-
+            // Window Title & Drag Bar (macOS standard: Close button on top-left)
+            HStack(spacing: 10) {
                 Button(action: {
                     if let onClose = onClose {
                         onClose()
@@ -34,13 +28,20 @@ public struct PreferencesView: View {
                     }
                 }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 9, weight: .bold))
                         .foregroundColor(.secondary)
-                        .padding(5)
+                        .frame(width: 14, height: 14)
+                        .padding(4)
                         .background(Circle().fill(Color.primary.opacity(0.08)))
                 }
                 .buttonStyle(.plain)
                 .help(L10n.tr("preferences.close_tooltip"))
+
+                Text(L10n.tr("preferences.window_title"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary)
+
+                Spacer()
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
@@ -74,12 +75,23 @@ public struct PreferencesView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(L10n.tr("preferences.app_name"))
                             .font(.title3.weight(.bold))
-                        Text(viewModel.appVersionText)
+
+                        Button(action: {
+                            viewModel.openLatestRelease()
+                        }) {
+                            HStack(spacing: 3) {
+                                Text(viewModel.appVersionText)
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 8, weight: .bold))
+                            }
                             .font(.system(size: 11, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .liquidGlassBadge(isCapsule: true)
+                        }
+                        .buttonStyle(.plain)
+                        .help("查看最新 Release 版本 (GitHub)")
                     }
 
                     Text(L10n.tr("preferences.app_tagline"))

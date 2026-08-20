@@ -384,4 +384,11 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(localizationManager.currentLanguage, .en)
         XCTAssertEqual(localizationManager.effectiveLanguage, .en)
     }
+
+    func test_preferencesViewModel_appVersionText_cleanFormat() {
+        let vm = PreferencesViewModel(preferences: MockPreferences())
+        XCTAssertTrue(vm.appVersionText.starts(with: "v"))
+        XCTAssertFalse(vm.appVersionText.contains("("))
+        XCTAssertFalse(vm.appVersionText.contains(")"))
+    }
 }
