@@ -180,4 +180,23 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertEqual(activator.activatedTargets.count, 1)
         XCTAssertEqual(mockSynthesizer.synthesizedCount, 1)
     }
+
+    func test_doubleTap_triggersPresentClipboardHandler() {
+        let expectedTarget = AppTarget(bundleIdentifier: "com.apple.Terminal", processIdentifier: 5678, localizedName: "Terminal")
+        let activator = MockAppActivator()
+        activator.currentFrontmost = expectedTarget
+
+        var presentedTarget: AppTarget?
+        let coordinator = AppCoordinator(
+            appActivator: activator,
+            presentClipboardHandler: { target in
+                presentedTarget = target
+            },
+            statusItemProvider: { nil }
+        )
+
+        coordinator.handleDoubleTapCommand()
+
+        XCTAssertEqual(presentedTarget, expectedTarget)
+    }
 }

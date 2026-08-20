@@ -11,6 +11,7 @@ public final class AppCoordinator: NSObject {
     public let directPasteService: DirectPasteService
     public let appActivator: AppActivating
     public let presentGuidanceHandler: () -> Void
+    public let presentClipboardHandler: (@Sendable (AppTarget?) -> Void)?
     private let statusItemProvider: () -> NSStatusItem?
 
     public private(set) var statusItem: NSStatusItem?
@@ -25,6 +26,7 @@ public final class AppCoordinator: NSObject {
         directPasteService: DirectPasteService = DirectPasteService(),
         appActivator: AppActivating = SystemAppActivator.shared,
         presentGuidanceHandler: @escaping () -> Void = {},
+        presentClipboardHandler: (@Sendable (AppTarget?) -> Void)? = nil,
         statusItemProvider: @escaping () -> NSStatusItem? = {
             NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         }
@@ -36,6 +38,7 @@ public final class AppCoordinator: NSObject {
         self.directPasteService = directPasteService
         self.appActivator = appActivator
         self.presentGuidanceHandler = presentGuidanceHandler
+        self.presentClipboardHandler = presentClipboardHandler
         self.statusItemProvider = statusItemProvider
         super.init()
     }
@@ -59,6 +62,7 @@ public final class AppCoordinator: NSObject {
         let frontmost = appActivator.frontmostApp()
         self.lastFrontmostApp = frontmost
         self.onDoubleTapCommand?(frontmost)
+        self.presentClipboardHandler?(frontmost)
     }
 
     @discardableResult
