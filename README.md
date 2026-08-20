@@ -1,70 +1,70 @@
 <p align="center">
-  <img src="icon.png" width="108" height="108" alt="简贴 软件图标" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.12));" />
+  <img src="icon.png" width="112" height="112" alt="简贴 AppIcon" style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.12));" />
 </p>
 
 <h1 align="center">简贴 (JianTie)</h1>
 
 <p align="center">
-  <strong>轻量、极简的 macOS 屏幕暂存架与智能剪贴板</strong><br>
-  原生打造 · 拟态毛玻璃视觉 · 内存仅占 20MB
+  <strong>一款轻巧顺手的 macOS 屏幕暂存架与剪贴板小助手</strong><br>
+  苹果原生质感 · 几乎不占内存 · 像系统自带一样自然
 </p>
 
 <p align="center">
-  <a href="https://github.com/XianShengXingGe/JianTie/releases/latest"><img src="https://img.shields.io/github/v/release/XianShengXingGe/JianTie?color=007AFF&label=最新版本" alt="Release"></a>
-  <img src="https://img.shields.io/badge/适配系统-macOS%2013.0%2B-000000.svg" alt="macOS 13.0+">
-  <img src="https://img.shields.io/badge/芯片支持-M系列%20%2F%20Intel-success.svg" alt="Universal">
-  <img src="https://img.shields.io/badge/开源协议-MIT-blue.svg" alt="License: MIT">
+  <a href="https://github.com/XianShengXingGe/JianTie/releases/latest"><img src="https://img.shields.io/github/v/release/XianShengXingGe/JianTie?color=007AFF&label=下载最新版" alt="Release"></a>
+  <img src="https://img.shields.io/badge/支持系统-macOS%2013%2B-000000.svg" alt="macOS 13+">
+  <img src="https://img.shields.io/badge/支持机型-M1~M4%20%2F%20Intel-success.svg" alt="Universal">
+  <img src="https://img.shields.io/badge/免费开源-MIT-blue.svg" alt="License: MIT">
 </p>
 
 ---
 
-## 🌟 为什么选择「简贴」？
+## 💡 它能帮你做什么？
 
-日常使用 Mac 办公或剪辑时，你是否常遇到这些烦恼：
-- **拖文件换窗口很费劲**：想把桌面文件拖进聊天软件，必须按住鼠标不放并疯狂切窗口，一不小心松手就得重来。
-- **刚复制的内容被覆盖了**：系统默认只记最后一次复制，不小心复制了空格或新内容，之前的长文字就找不到了。
-- **找暂存文件看不清**：不知道暂存的图片是哪张，每次都要重新在访达里找。
+平时用 Mac 办公、写文档或聊天时，你是否也遇到过这些小烦恼：
 
-**「简贴」就是为你解决这些小痛点而生的：**
+- 📁 **拖拽文件找窗口太费劲**：想把桌面文件发给微信好友，需要一手按住鼠标不放，另一只手手忙脚乱切换窗口，中途一松手就前功尽弃。  
+  👉 **简贴帮你**：顺手把文件往屏幕边缘一放即可暂存；切换好窗口后再轻松拖出来，还支持按**空格键**秒开大图预览！
 
-- 📁 **屏幕边缘暂存架**：文件顺手往屏幕边缘一甩即可暂存；支持多文件一键打包堆叠；悬停按 **空格键** 还能秒开大图与文档预览。
-- 📋 **智能剪贴板历史**：随时找回复制过的文本、截图与文件；选中记录按 **回车**，直接帮你自动粘贴到当前窗口。
-- 🪶 **原生轻盈，好看好用**：专为 macOS 打造的 Liquid Glass 拟态玻璃质感，内存仅占用 ~20MB，不臃肿、不发热。
+- 📋 **刚复制的内容不小心被覆盖了**：系统自带的剪贴板只能记最后一条，复制了新文字，前面的重要内容就弄丢了。  
+  👉 **简贴帮你**：自动记录你复制过的文字、图片和文件；连按两次 **⌘ (Command)** 键随时唤出，选中按回车还能直接帮你自动粘贴！
+
+- 🍃 **讨厌臃肿发热的软件**：很多工具动辄占用几百兆内存，后台还偷偷耗电。  
+  👉 **简贴帮你**：纯原生打造，内存仅占用 ~20MB，平时安静常驻，绝不打扰。
 
 ---
 
-## 🚀 30秒极速上手
+## 🚀 30 秒轻松上手
 
-### 1. 文件暂存架
-- **放文件**：把任意文件拖到屏幕左侧（或右侧）边缘，暂存架自动滑出，松手即存。
-- **看内容**：鼠标停在文件卡片上，按下 **空格键 (Space)** 即可极速预览。
-- **用文件**：打开微信或邮件，直接从暂存架把文件拖进窗口即可发送。
-- **删文件**：点击卡片右上角 ✕，或直接把文件拖到暂存架底部的红色区域。
+### 1. 暂存文件（屏幕边栏）
+- **放入**：拖动任意文件往屏幕左边（或右边）一靠，边栏自动滑出，松开鼠标就存好了。
+- **看大图**：鼠标停在文件上，按一下 **空格键** 就能直接查看大图和文档。
+- **发送**：打开聊天软件或邮件，直接把文件从边栏拖进去即可。
+- **移除**：点击卡片右上角 ✕，或者把文件拖到边栏下方的红色区域。
 
 ### 2. 剪贴板历史
-- **唤出面板**：键盘上 **快速连按两次 ⌘ (Command)** 即可唤出。
-- **直接粘贴**：上下方向键选择记录，按 **Enter (回车)** 即可直接自动粘贴进输入框。
-- **搜索过滤**：唤出后直接打字搜索关键词，或点击顶部标签切换「文字 / 图片 / 文件」。
+- **调出**：键盘上 **快速按两次 ⌘ (Command)** 键即可打开历史面板。
+- **自动粘贴**：按方向键选中内容，按 **回车键 (Enter)** 自动帮你粘贴到当前光标处。
+- **搜索**：直接打字即可秒搜历史记录，也可以点上方标签只看图片或文字。
 
 ---
 
 ## 📦 下载与安装
 
-1. 前往 [**GitHub Releases**](https://github.com/XianShengXingGe/JianTie/releases/latest) 下载最新的 `JianTie-v1.0.0.dmg`。
-2. 双击打开安装包，将 **简贴** 拖入 **Applications (应用程序)** 文件夹。
-3. 首次启动根据提示开启辅助功能权限（用于实现回车自动回贴）。
+1. 点击前往 [**下载页面 (GitHub Releases)**](https://github.com/XianShengXingGe/JianTie/releases/latest)，下载 `JianTie-v1.0.0.dmg`。
+2. 双击打开安装包，把 **简贴** 图标拖进 **应用程序 (Applications)** 文件夹。
+3. 打开软件，根据提示在 Mac「系统设置 $\rightarrow$ 隐私与安全性 $\rightarrow$ 辅助功能」中勾选允许（用于实现回车自动帮你粘贴）。
 
-> 💡 **小贴士（首次打开若提示无法验证开发者）**：  
-> 打开 Mac「终端 (Terminal)」，输入以下命令并按回车即可：
+> 💡 **小贴士（首次打开若提示“无法验证开发者”）**：  
+> 打开 Mac 自带的「终端」App，复制粘贴下面这行命令并按回车即可正常打开：
 > ```bash
 > xattr -cr /Applications/JianTie.app
 > ```
 
 ---
 
-## ☕ 赞赏与支持
+## ☕ 请作者喝杯咖啡
 
-「简贴」为个人独立开发的开源免费工具。如果它切实帮您提升了效率，欢迎请作者喝杯咖啡 ☕，感谢您的支持与鼓励！
+「简贴」是由个人独立开发的免费开源工具。如果你觉得它为你带来了便利、节省了时间，欢迎请作者喝杯咖啡 ☕，你的鼓励是持续维护更新的最大动力！
 
 <p align="center">
   <img src="Sources/JianTieApp/Resources/alipay_qr.jpg" width="180" alt="支付宝赞赏码" style="border-radius: 10px; margin: 8px;" />
@@ -72,10 +72,10 @@
   <img src="Sources/JianTieApp/Resources/wechat_qr.jpg" width="180" alt="微信赞赏码" style="border-radius: 10px; margin: 8px;" />
 </p>
 
-- **反馈建议**：使用中遇到问题或有新想法，欢迎提交 [GitHub Issue](https://github.com/XianShengXingGe/JianTie/issues)。
+- **反馈与建议**：使用中遇到任何问题或有好想法，欢迎在 [GitHub Issues](https://github.com/XianShengXingGe/JianTie/issues) 留言交流。
 
 ---
 
 ## 📄 开源协议
 
-本项目采用 [MIT License](LICENSE) 开源。
+本项目采用 [MIT License](LICENSE) 协议开源。
