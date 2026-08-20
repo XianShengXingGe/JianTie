@@ -2,6 +2,8 @@ import XCTest
 @testable import JianTieCore
 
 private final class StorageTestPreferences: PreferencesProviding, @unchecked Sendable {
+    var launchAtLogin: Bool = true
+    var hasConfiguredLaunchAtLogin: Bool = true
     var shelfEdge: ShelfEdge = .left
     var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
     var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
@@ -160,6 +162,8 @@ final class ClipboardStorageTests: XCTestCase {
         testPreferences.clipboardCapacityLimit = .count50
         // We test with custom limit subclass for testing small numbers
         final class CustomCapPrefs: PreferencesProviding, @unchecked Sendable {
+            var launchAtLogin: Bool = true
+            var hasConfiguredLaunchAtLogin: Bool = true
             var shelfEdge: ShelfEdge = .left
             var clipboardCapacityLimit: ClipboardCapacityLimit = .count50
             var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited

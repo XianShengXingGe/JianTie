@@ -5,33 +5,64 @@ import JianTieCore
 /// 偏好设置 SwiftUI 主视图
 public struct PreferencesView: View {
     @ObservedObject public var viewModel: PreferencesViewModel
+    public var onClose: (() -> Void)?
     @State private var showDonationModal: Bool = false
 
-    public init(viewModel: PreferencesViewModel) {
+    public init(viewModel: PreferencesViewModel, onClose: (() -> Void)? = nil) {
         self.viewModel = viewModel
+        self.onClose = onClose
     }
 
     public var body: some View {
         VStack(spacing: 0) {
+            // Window Title & Drag Bar
+            HStack {
+                Text("偏好设置")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                Button(action: {
+                    if let onClose = onClose {
+                        onClose()
+                    } else {
+                        NSApp.keyWindow?.orderOut(nil)
+                    }
+                }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .padding(5)
+                        .background(Circle().fill(Color.primary.opacity(0.08)))
+                }
+                .buttonStyle(.plain)
+                .help("关闭设置窗口 (ESC)")
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 6)
+            .windowDraggable()
+
             // Header / App Info
             HStack(spacing: 16) {
                 if let appIcon = AppIconProvider.loadAppIcon() {
                     Image(nsImage: appIcon)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1)
                 } else {
                     ZStack {
                         Circle()
                             .fill(Color.accentColor.opacity(0.12))
-                            .frame(width: 48, height: 48)
+                            .frame(width: 44, height: 44)
 
                         Image(systemName: "tray.fill")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 24, height: 24)
+                            .frame(width: 22, height: 22)
                             .foregroundColor(.accentColor)
                     }
                 }
@@ -39,7 +70,7 @@ public struct PreferencesView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("简贴")
-                            .font(.title2.weight(.bold))
+                            .font(.title3.weight(.bold))
                         Text(viewModel.appVersionText)
                             .font(.system(size: 11, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
@@ -55,9 +86,10 @@ public struct PreferencesView: View {
 
                 Spacer()
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 22)
-            .padding(.bottom, 16)
+            .padding(.horizontal, 20)
+            .padding(.top, 6)
+            .padding(.bottom, 14)
+            .windowDraggable()
 
             Divider()
                 .background(
@@ -71,6 +103,34 @@ public struct PreferencesView: View {
             // Settings Content
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 16) {
+                    // Section 0: General
+                    VStack(alignment: .leading, spacing: 8) {
+                        sectionLabel(title: "通用设置 (General)", icon: "gearshape")
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(alignment: .center, spacing: 16) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("开机自启 (随系统启动)")
+                                        .font(.body)
+                                    Text("登录 macOS 系统时自动在后台启动简贴并常驻菜单栏。")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                }
+
+                                Spacer()
+
+                                Toggle("", isOn: Binding(
+                                    get: { viewModel.launchAtLogin },
+                                    set: { viewModel.setLaunchAtLogin($0) }
+                                ))
+                                .toggleStyle(.switch)
+                                .labelsHidden()
+                            }
+                        }
+                        .padding(14)
+                        .liquidGlassSection(cornerRadius: 12)
+                    }
+
                     // Section 1: Shelf
                     VStack(alignment: .leading, spacing: 8) {
                         sectionLabel(title: "暂存架 (Shelf)", icon: "sidebar.squares.left")
@@ -294,7 +354,7 @@ public struct PreferencesView: View {
                 .padding(.vertical, 16)
             }
         }
-        .frame(width: 480, height: 540)
+        .frame(width: 480, height: 600)
         .liquidGlassPanel(cornerRadius: 18, material: .hudWindow)
         .overlay {
             if showDonationModal {
@@ -312,10 +372,10 @@ public struct PreferencesView: View {
             Text("此操作将完全清除内存与磁盘中的所有剪贴板历史记录及图片缓存，且不可撤销。")
         }
         .onAppear {
-            viewModel.refreshAccessibilityStatus()
+            viewModel.refreshStatus()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            viewModel.refreshAccessibilityStatus()
+            viewModel.refreshStatus()
         }
     }
 

@@ -5,13 +5,16 @@ import AppKit
 public struct VisualEffectBackground: NSViewRepresentable {
     public let material: NSVisualEffectView.Material
     public let blendingMode: NSVisualEffectView.BlendingMode
+    public let cornerRadius: CGFloat
 
     public init(
         material: NSVisualEffectView.Material = .hudWindow,
-        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow
+        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
+        cornerRadius: CGFloat = 0
     ) {
         self.material = material
         self.blendingMode = blendingMode
+        self.cornerRadius = cornerRadius
     }
 
     public func makeNSView(context: Context) -> NSVisualEffectView {
@@ -19,12 +22,38 @@ public struct VisualEffectBackground: NSViewRepresentable {
         view.material = material
         view.blendingMode = blendingMode
         view.state = .active
+        view.wantsLayer = true
+        if cornerRadius > 0 {
+            view.layer?.cornerRadius = cornerRadius
+            view.layer?.masksToBounds = true
+        }
         return view
     }
 
     public func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
+        if cornerRadius > 0 {
+            nsView.layer?.cornerRadius = cornerRadius
+            nsView.layer?.masksToBounds = true
+        }
+    }
+}
+
+/// 支持在 SwiftUI 区域中通过鼠标按下拖拽当前所属 NSWindow 的辅助视图
+public struct WindowDragGestureView: NSViewRepresentable {
+    public init() {}
+
+    public func makeNSView(context: Context) -> DraggingNSView {
+        DraggingNSView()
+    }
+
+    public func updateNSView(_ nsView: DraggingNSView, context: Context) {}
+
+    public final class DraggingNSView: NSView {
+        public override func mouseDown(with event: NSEvent) {
+            window?.performDrag(with: event)
+        }
     }
 }
 
@@ -50,7 +79,7 @@ public struct LiquidGlassPanelModifier: ViewModifier {
         content
             .background(
                 ZStack {
-                    VisualEffectBackground(material: material, blendingMode: blendingMode)
+                    VisualEffectBackground(material: material, blendingMode: blendingMode, cornerRadius: cornerRadius)
 
                     // 拟态玻璃内部折射微光晕
                     LinearGradient(
@@ -65,8 +94,6 @@ public struct LiquidGlassPanelModifier: ViewModifier {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(specularBorderGradient, lineWidth: 1)
             )
-            .shadow(color: shadowAmbientColor, radius: 16, x: 0, y: 8)
-            .shadow(color: shadowContactColor, radius: 4, x: 0, y: 2)
     }
 
     private var innerGlowColors: [Color] {
@@ -89,10 +116,10 @@ public struct LiquidGlassPanelModifier: ViewModifier {
         if colorScheme == .dark {
             return LinearGradient(
                 stops: [
-                    .init(color: Color.white.opacity(0.40), location: 0.0),
-                    .init(color: Color.white.opacity(0.15), location: 0.35),
+                    .init(color: Color.white.opacity(0.35), location: 0.0),
+                    .init(color: Color.white.opacity(0.12), location: 0.35),
                     .init(color: Color.white.opacity(0.04), location: 0.70),
-                    .init(color: Color.primary.opacity(0.12), location: 1.0)
+                    .init(color: Color.white.opacity(0.08), location: 1.0)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -100,23 +127,15 @@ public struct LiquidGlassPanelModifier: ViewModifier {
         } else {
             return LinearGradient(
                 stops: [
-                    .init(color: Color.white.opacity(0.85), location: 0.0),
-                    .init(color: Color.white.opacity(0.35), location: 0.35),
-                    .init(color: Color.black.opacity(0.06), location: 0.70),
-                    .init(color: Color.black.opacity(0.14), location: 1.0)
+                    .init(color: Color.white.opacity(0.75), location: 0.0),
+                    .init(color: Color.white.opacity(0.25), location: 0.35),
+                    .init(color: Color.white.opacity(0.05), location: 0.70),
+                    .init(color: Color.white.opacity(0.15), location: 1.0)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         }
-    }
-
-    private var shadowAmbientColor: Color {
-        colorScheme == .dark ? Color.black.opacity(0.28) : Color.black.opacity(0.14)
-    }
-
-    private var shadowContactColor: Color {
-        colorScheme == .dark ? Color.black.opacity(0.12) : Color.black.opacity(0.06)
     }
 }
 
@@ -379,5 +398,9 @@ public extension View {
 
     func liquidGlassSection(cornerRadius: CGFloat = 12) -> some View {
         modifier(LiquidGlassSectionModifier(cornerRadius: cornerRadius))
+    }
+
+    func windowDraggable() -> some View {
+        self.background(WindowDragGestureView())
     }
 }

@@ -113,7 +113,18 @@ public final class ClipboardPanelWindowController: NSWindowController, NSWindowD
     public func show(targetApp: AppTarget?) {
         guard let window = self.window else { return }
 
-        self.targetApp = targetApp
+        let resolvedTarget: AppTarget?
+        if let target = targetApp, target.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            resolvedTarget = target
+        } else if let coordinatorTarget = appCoordinator?.lastFrontmostApp, coordinatorTarget.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            resolvedTarget = coordinatorTarget
+        } else if let front = appCoordinator?.appActivator.frontmostApp(), front.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            resolvedTarget = front
+        } else {
+            resolvedTarget = nil
+        }
+
+        self.targetApp = resolvedTarget
         viewModel.resetForPresentation()
 
         positionWindowOnActiveScreen(window)
@@ -141,7 +152,7 @@ public final class ClipboardPanelWindowController: NSWindowController, NSWindowD
     /// 回贴指定项并关闭浮层
     public func pasteItemAndClose(_ item: ClipboardItem) {
         guard let window = self.window, window.isVisible else { return }
-        let target = self.targetApp
+        let target = self.targetApp ?? appCoordinator?.lastFrontmostApp
         window.orderOut(nil)
 
         Task { @MainActor [weak self] in

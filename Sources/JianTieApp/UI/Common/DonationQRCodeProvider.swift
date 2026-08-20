@@ -30,6 +30,11 @@ public enum DonationQRCodeProvider {
                         return image
                     }
                 }
+                if let resourceURL = currentBundle.resourceURL?.appendingPathComponent("\(resourceName).\(ext)"),
+                   FileManager.default.fileExists(atPath: resourceURL.path),
+                   let image = NSImage(contentsOf: resourceURL), image.isValid {
+                    return image
+                }
             }
         }
         return nil

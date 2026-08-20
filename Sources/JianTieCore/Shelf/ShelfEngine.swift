@@ -78,6 +78,7 @@ public final class ShelfEngine: ObservableObject {
     private var activeScreen: ScreenInfo?
     private let sharedState = SharedShelfState()
     private var feedbackTask: Task<Void, Never>?
+    private let screensProvider: @Sendable () -> [ScreenInfo]
 
     public init(
         edge: ShelfEdge? = nil,
@@ -88,6 +89,7 @@ public final class ShelfEngine: ObservableObject {
         pruner: ShelfPruner? = nil,
         airDropService: AirDropSharingProviding? = nil,
         pasteboardWriter: PasteboardWriting? = nil,
+        screensProvider: @escaping @Sendable () -> [ScreenInfo] = { ScreenInfo.currentScreens() },
         autoStart: Bool = true
     ) {
         let actualPreferences = preferences ?? UserDefaultsPreferences.shared
@@ -98,6 +100,7 @@ public final class ShelfEngine: ObservableObject {
         self.pruner = pruner ?? ShelfPruner()
         self.airDropService = airDropService ?? SystemAirDropService()
         self.pasteboardWriter = pasteboardWriter ?? SystemPasteboardWriter()
+        self.screensProvider = screensProvider
         self.sharedState.edge = initialEdge
         self.sharedState.isRevealed = false
 
@@ -105,8 +108,9 @@ public final class ShelfEngine: ObservableObject {
         self.dragMonitor = actualDragMonitor
 
         let capturedShared = self.sharedState
+        let capturedScreens = screensProvider
         let actualEdgeMonitor = edgeMonitor ?? ShelfEdgeMonitor(
-            screensProvider: { ScreenInfo.currentScreens() },
+            screensProvider: capturedScreens,
             edgeProvider: { capturedShared.edge },
             isRevealedProvider: { capturedShared.isRevealed }
         )
@@ -179,16 +183,27 @@ public final class ShelfEngine: ObservableObject {
 
     /// 接收拖入的文件 URL 列表，生成原子 Stack 并暂存
     @discardableResult
-    public func dropFiles(_ urls: [URL]) -> ShelfStack? {
+    public func dropFiles(_ urls: [URL], on targetScreen: ScreenInfo? = nil) -> ShelfStack? {
         guard !urls.isEmpty else { return nil }
 
         let references = urls.map { ShelfFileReference(url: $0) }
         let stack = ShelfStack(files: references)
         stacks.insert(stack, at: 0)
 
-        let screens = ScreenInfo.currentScreens()
-        let screen = activeScreen ?? screens.first
-        self.activeScreen = screen
+        let screens = screensProvider()
+        let screen: ScreenInfo?
+        if let existing = activeScreen {
+            screen = existing
+        } else if let target = targetScreen {
+            screen = target
+            self.activeScreen = target
+        } else if let mouseScreen = geometryCalculator.findScreen(for: NSEvent.mouseLocation, in: screens) {
+            screen = mouseScreen
+            self.activeScreen = mouseScreen
+        } else {
+            screen = screens.first
+            self.activeScreen = screen
+        }
 
         if let screen = screen {
             let (visibleFrame, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
@@ -311,7 +326,7 @@ public final class ShelfEngine: ObservableObject {
 
     /// 处理 Finder 拖拽开始事件
     public func handleDragStarted(files: [URL], at location: CGPoint) {
-        let screens = ScreenInfo.currentScreens()
+        let screens = screensProvider()
         let targetScreen: ScreenInfo
         if let existing = activeScreen, !stacks.isEmpty {
             // 当 Shelf 里已有文件暂存时，维持原屏幕位置，不再跟随鼠标切换屏幕
@@ -388,7 +403,7 @@ public final class ShelfEngine: ObservableObject {
     public func dismiss() {
         guard state.isVisible else { return }
 
-        let screen = activeScreen ?? ScreenInfo.currentScreens().first
+        let screen = activeScreen ?? screensProvider().first
 
         if let screen = screen {
             let (_, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
@@ -402,7 +417,7 @@ public final class ShelfEngine: ObservableObject {
 
     private func updateRevealedPositionForCurrentEdge() {
         guard state.isVisible else { return }
-        let screens = ScreenInfo.currentScreens()
+        let screens = screensProvider()
         let screen = activeScreen ?? screens.first
         guard let screen = screen else { return }
 

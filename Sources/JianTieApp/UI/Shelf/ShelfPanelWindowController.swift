@@ -133,7 +133,8 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         }
 
         hostView.onDropFiles = { [weak self] urls in
-            self?.engine.dropFiles(urls)
+            let screen = self?.window?.screen.map { ScreenInfo(screen: $0) }
+            self?.engine.dropFiles(urls, on: screen)
         }
 
         window.contentView = hostView

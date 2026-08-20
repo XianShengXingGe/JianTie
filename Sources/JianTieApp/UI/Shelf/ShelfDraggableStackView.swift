@@ -178,7 +178,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
     // MARK: - NSDraggingSource
 
     public func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-        return [.copy, .generic]
+        return .every
     }
 
     public func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {

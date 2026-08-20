@@ -57,18 +57,20 @@ public struct ClipboardItemCardView: View {
 
             Spacer()
 
-            if isHovered {
-                Button(action: onDelete) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .padding(4)
-                        .background(Circle().fill(Color.primary.opacity(0.1)))
-                }
-                .buttonStyle(.plain)
-                .help("从历史中删除")
+            Button(action: onDelete) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.secondary)
+                    .padding(3)
+                    .background(Circle().fill(Color.primary.opacity(0.1)))
             }
+            .buttonStyle(.plain)
+            .help("从历史中删除")
+            .opacity(isHovered ? 1.0 : 0.0)
+            .disabled(!isHovered)
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
         }
+        .frame(height: 18)
     }
 
     @ViewBuilder

@@ -196,4 +196,9 @@ final class DirectPasteServiceTests: XCTestCase {
         XCTAssertEqual(mockActivator.activatedTargets.count, 0)
         XCTAssertEqual(mockSynthesizer.synthesizedCount, 0)
     }
+
+    func test_directPasteService_defaultYieldDelay_is120ms() {
+        let service = DirectPasteService()
+        XCTAssertEqual(service.yieldDelay, 0.12)
+    }
 }

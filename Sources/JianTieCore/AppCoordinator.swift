@@ -4,6 +4,8 @@ import AppKit
 /// 核心应用协调器，管理生命周期、权限状态与系统状态栏
 @MainActor
 public final class AppCoordinator: NSObject {
+    public let preferences: PreferencesProviding
+    public let launchAtLoginService: LaunchAtLoginProviding
     public let accessibilityService: AccessibilityPermissionProviding
     public let menuBuilder: StatusBarMenuBuilder
     public let clipboardEngine: ClipboardEngine
@@ -21,6 +23,8 @@ public final class AppCoordinator: NSObject {
     public var onDoubleTapCommand: (@Sendable (AppTarget?) -> Void)?
 
     public init(
+        preferences: PreferencesProviding = UserDefaultsPreferences.shared,
+        launchAtLoginService: LaunchAtLoginProviding = LaunchAtLoginService.shared,
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
         menuBuilder: StatusBarMenuBuilder = StatusBarMenuBuilder(),
         clipboardEngine: ClipboardEngine? = nil,
@@ -35,6 +39,8 @@ public final class AppCoordinator: NSObject {
             NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         }
     ) {
+        self.preferences = preferences
+        self.launchAtLoginService = launchAtLoginService
         self.accessibilityService = accessibilityService
         self.menuBuilder = menuBuilder
         self.clipboardEngine = clipboardEngine ?? ClipboardEngine(autoStart: false)
@@ -50,11 +56,19 @@ public final class AppCoordinator: NSObject {
     }
 
     public func start() {
+        setupLaunchAtLoginOnFirstLaunchIfNeeded()
         setupStatusItem()
         checkAccessibilityOnLaunch()
         clipboardEngine.startMonitoring()
         shelfEngine.startMonitoring()
         startHotKeyMonitoring()
+    }
+
+    public func setupLaunchAtLoginOnFirstLaunchIfNeeded() {
+        guard !preferences.hasConfiguredLaunchAtLogin else { return }
+        preferences.hasConfiguredLaunchAtLogin = true
+        preferences.launchAtLogin = true
+        _ = launchAtLoginService.register()
     }
 
     public func startHotKeyMonitoring() {
@@ -67,9 +81,11 @@ public final class AppCoordinator: NSObject {
 
     public func handleDoubleTapCommand() {
         let frontmost = appActivator.frontmostApp()
-        self.lastFrontmostApp = frontmost
-        self.onDoubleTapCommand?(frontmost)
-        self.presentClipboardHandler?(frontmost)
+        if let front = frontmost, front.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            self.lastFrontmostApp = front
+        }
+        self.onDoubleTapCommand?(lastFrontmostApp)
+        self.presentClipboardHandler?(lastFrontmostApp)
     }
 
     @discardableResult

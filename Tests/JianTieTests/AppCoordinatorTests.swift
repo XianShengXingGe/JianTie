@@ -56,6 +56,34 @@ private final class MockKeySynthesizer: KeyEventSynthesizing, @unchecked Sendabl
     }
 }
 
+private final class MockPreferences: PreferencesProviding, @unchecked Sendable {
+    var launchAtLogin: Bool = false
+    var hasConfiguredLaunchAtLogin: Bool = false
+    var shelfEdge: ShelfEdge = .left
+    var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
+    var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
+}
+
+private final class MockLaunchAtLoginService: LaunchAtLoginProviding, @unchecked Sendable {
+    var isEnabled: Bool = false
+    var registerCallCount = 0
+    var unregisterCallCount = 0
+
+    @discardableResult
+    func register() -> Bool {
+        registerCallCount += 1
+        isEnabled = true
+        return true
+    }
+
+    @discardableResult
+    func unregister() -> Bool {
+        unregisterCallCount += 1
+        isEnabled = false
+        return true
+    }
+}
+
 private final class TestBox<T>: @unchecked Sendable {
     var value: T
     init(_ value: T) {
@@ -247,5 +275,46 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.statusItem?.button?.image?.isTemplate == true)
         XCTAssertEqual(coordinator.statusItem?.button?.image?.size.width, 18)
         XCTAssertEqual(coordinator.statusItem?.button?.image?.size.height, 18)
+    }
+
+    func test_start_onFirstLaunch_enablesLaunchAtLoginAndRegisters() {
+        let mockPrefs = MockPreferences()
+        mockPrefs.hasConfiguredLaunchAtLogin = false
+        mockPrefs.launchAtLogin = false
+        let mockLaunchAtLogin = MockLaunchAtLoginService()
+
+        let coordinator = AppCoordinator(
+            preferences: mockPrefs,
+            launchAtLoginService: mockLaunchAtLogin,
+            statusItemProvider: { nil }
+        )
+
+        coordinator.start()
+
+        XCTAssertTrue(mockPrefs.hasConfiguredLaunchAtLogin)
+        XCTAssertTrue(mockPrefs.launchAtLogin)
+        XCTAssertEqual(mockLaunchAtLogin.registerCallCount, 1)
+        XCTAssertTrue(mockLaunchAtLogin.isEnabled)
+    }
+
+    func test_start_whenAlreadyConfigured_doesNotOverridePreferences() {
+        let mockPrefs = MockPreferences()
+        mockPrefs.hasConfiguredLaunchAtLogin = true
+        mockPrefs.launchAtLogin = false
+        let mockLaunchAtLogin = MockLaunchAtLoginService()
+        mockLaunchAtLogin.isEnabled = false
+
+        let coordinator = AppCoordinator(
+            preferences: mockPrefs,
+            launchAtLoginService: mockLaunchAtLogin,
+            statusItemProvider: { nil }
+        )
+
+        coordinator.start()
+
+        XCTAssertTrue(mockPrefs.hasConfiguredLaunchAtLogin)
+        XCTAssertFalse(mockPrefs.launchAtLogin)
+        XCTAssertEqual(mockLaunchAtLogin.registerCallCount, 0)
+        XCTAssertFalse(mockLaunchAtLogin.isEnabled)
     }
 }

@@ -3,9 +3,31 @@ import Combine
 @testable import JianTieCore
 
 private final class MockPreferences: PreferencesProviding, @unchecked Sendable {
+    var launchAtLogin: Bool = true
+    var hasConfiguredLaunchAtLogin: Bool = false
     var shelfEdge: ShelfEdge = .left
     var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
     var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
+}
+
+private final class MockLaunchAtLoginService: LaunchAtLoginProviding, @unchecked Sendable {
+    var isEnabled: Bool = false
+    var registerCallCount = 0
+    var unregisterCallCount = 0
+
+    @discardableResult
+    func register() -> Bool {
+        registerCallCount += 1
+        isEnabled = true
+        return true
+    }
+
+    @discardableResult
+    func unregister() -> Bool {
+        unregisterCallCount += 1
+        isEnabled = false
+        return true
+    }
 }
 
 private final class MockAccessibilityPermissionService: AccessibilityPermissionProviding, @unchecked Sendable {
@@ -46,6 +68,8 @@ final class PreferencesTests: XCTestCase {
 
     func test_userDefaultsPreferences_defaults() {
         let prefs = UserDefaultsPreferences(userDefaults: testUserDefaults)
+        XCTAssertTrue(prefs.launchAtLogin)
+        XCTAssertFalse(prefs.hasConfiguredLaunchAtLogin)
         XCTAssertEqual(prefs.shelfEdge, .left)
         XCTAssertEqual(prefs.clipboardCapacityLimit, .count1000)
         XCTAssertEqual(prefs.clipboardRetentionPeriod, .unlimited)
@@ -53,16 +77,22 @@ final class PreferencesTests: XCTestCase {
 
     func test_userDefaultsPreferences_persistsNewValues() {
         let prefs = UserDefaultsPreferences(userDefaults: testUserDefaults)
+        prefs.launchAtLogin = false
+        prefs.hasConfiguredLaunchAtLogin = true
         prefs.shelfEdge = .right
         prefs.clipboardCapacityLimit = .count300
         prefs.clipboardRetentionPeriod = .days30
 
+        XCTAssertFalse(prefs.launchAtLogin)
+        XCTAssertTrue(prefs.hasConfiguredLaunchAtLogin)
         XCTAssertEqual(prefs.shelfEdge, .right)
         XCTAssertEqual(prefs.clipboardCapacityLimit, .count300)
         XCTAssertEqual(prefs.clipboardRetentionPeriod, .days30)
 
         // 读取新实例验证已持久化
         let prefs2 = UserDefaultsPreferences(userDefaults: testUserDefaults)
+        XCTAssertFalse(prefs2.launchAtLogin)
+        XCTAssertTrue(prefs2.hasConfiguredLaunchAtLogin)
         XCTAssertEqual(prefs2.shelfEdge, .right)
         XCTAssertEqual(prefs2.clipboardCapacityLimit, .count300)
         XCTAssertEqual(prefs2.clipboardRetentionPeriod, .days30)
@@ -86,14 +116,18 @@ final class PreferencesTests: XCTestCase {
         mockPrefs.shelfEdge = .right
         mockPrefs.clipboardCapacityLimit = .count500
         mockPrefs.clipboardRetentionPeriod = .days7
+        let mockLaunchAtLogin = MockLaunchAtLoginService()
+        mockLaunchAtLogin.isEnabled = true
         let mockAccessibility = MockAccessibilityPermissionService()
         mockAccessibility.isTrusted = true
 
         let vm = PreferencesViewModel(
             preferences: mockPrefs,
+            launchAtLoginService: mockLaunchAtLogin,
             accessibilityService: mockAccessibility
         )
 
+        XCTAssertTrue(vm.launchAtLogin)
         XCTAssertEqual(vm.shelfEdge, .right)
         XCTAssertEqual(vm.clipboardCapacityLimit, .count500)
         XCTAssertEqual(vm.clipboardRetentionPeriod, .days7)
@@ -101,6 +135,55 @@ final class PreferencesTests: XCTestCase {
         XCTAssertTrue(vm.clipboardRetentionDescription.contains("FIFO"))
         XCTAssertFalse(vm.appVersionText.isEmpty)
         XCTAssertFalse(vm.showClearConfirmationAlert)
+    }
+
+    func test_preferencesViewModel_setLaunchAtLogin_registersAndUnregisters() {
+        let mockPrefs = MockPreferences()
+        let mockLaunchAtLogin = MockLaunchAtLoginService()
+        mockLaunchAtLogin.isEnabled = false
+
+        let vm = PreferencesViewModel(
+            preferences: mockPrefs,
+            launchAtLoginService: mockLaunchAtLogin,
+            accessibilityService: MockAccessibilityPermissionService()
+        )
+
+        XCTAssertFalse(vm.launchAtLogin)
+
+        // 开启开机自启
+        vm.setLaunchAtLogin(true)
+        XCTAssertTrue(vm.launchAtLogin)
+        XCTAssertTrue(mockPrefs.launchAtLogin)
+        XCTAssertEqual(mockLaunchAtLogin.registerCallCount, 1)
+        XCTAssertTrue(mockLaunchAtLogin.isEnabled)
+
+        // 关闭开机自启
+        vm.setLaunchAtLogin(false)
+        XCTAssertFalse(vm.launchAtLogin)
+        XCTAssertFalse(mockPrefs.launchAtLogin)
+        XCTAssertEqual(mockLaunchAtLogin.unregisterCallCount, 1)
+        XCTAssertFalse(mockLaunchAtLogin.isEnabled)
+    }
+
+    func test_preferencesViewModel_refreshLaunchAtLoginStatus_synchronizesWithService() {
+        let mockPrefs = MockPreferences()
+        let mockLaunchAtLogin = MockLaunchAtLoginService()
+        mockLaunchAtLogin.isEnabled = false
+
+        let vm = PreferencesViewModel(
+            preferences: mockPrefs,
+            launchAtLoginService: mockLaunchAtLogin,
+            accessibilityService: MockAccessibilityPermissionService()
+        )
+
+        XCTAssertFalse(vm.launchAtLogin)
+
+        // 外部（如系统设置）改变了状态
+        mockLaunchAtLogin.isEnabled = true
+        vm.refreshLaunchAtLoginStatus()
+
+        XCTAssertTrue(vm.launchAtLogin)
+        XCTAssertTrue(mockPrefs.launchAtLogin)
     }
 
     func test_preferencesViewModel_setShelfEdge_updatesPrefsAndEngine() {
@@ -166,20 +249,29 @@ final class PreferencesTests: XCTestCase {
         XCTAssertTrue(clipboardEngine.items.isEmpty)
     }
 
-    func test_preferencesViewModel_refreshAccessibilityStatus() {
+    func test_preferencesViewModel_refreshStatus_refreshesBothAccessibilityAndLaunchAtLogin() {
+        let mockPrefs = MockPreferences()
+        let mockLaunchAtLogin = MockLaunchAtLoginService()
+        mockLaunchAtLogin.isEnabled = false
         let mockAccessibility = MockAccessibilityPermissionService()
         mockAccessibility.isTrusted = false
+
         let vm = PreferencesViewModel(
-            preferences: MockPreferences(),
+            preferences: mockPrefs,
+            launchAtLoginService: mockLaunchAtLogin,
             accessibilityService: mockAccessibility
         )
 
         XCTAssertFalse(vm.isAccessibilityTrusted)
+        XCTAssertFalse(vm.launchAtLogin)
 
         mockAccessibility.isTrusted = true
-        vm.refreshAccessibilityStatus()
+        mockLaunchAtLogin.isEnabled = true
+
+        vm.refreshStatus()
 
         XCTAssertTrue(vm.isAccessibilityTrusted)
+        XCTAssertTrue(vm.launchAtLogin)
     }
 
     func test_preferencesViewModel_openAccessibilitySettings() {

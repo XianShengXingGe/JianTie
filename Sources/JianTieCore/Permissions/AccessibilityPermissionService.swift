@@ -20,7 +20,8 @@ public final class AccessibilityPermissionService: AccessibilityPermissionProvid
 
     public init(
         isTrustedProvider: @escaping () -> Bool = {
-            AXIsProcessTrusted()
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
+            return AXIsProcessTrustedWithOptions(options)
         },
         promptProvider: @escaping () -> Bool = {
             let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary

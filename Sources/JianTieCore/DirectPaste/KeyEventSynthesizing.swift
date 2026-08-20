@@ -19,7 +19,7 @@ public final class CGEventKeySynthesizer: KeyEventSynthesizing, @unchecked Senda
     public func synthesizeCommandV() -> Bool {
         // macOS ANSI 键盘中 'V' 键的 virtual keycode 为 0x09 (kVK_ANSI_V)
         let vKeyCode: CGKeyCode = 0x09
-        let source = CGEventSource(stateID: .combinedSessionState)
+        let source = CGEventSource(stateID: .hidSystemState)
 
         guard let keyDownEvent = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true),
               let keyUpEvent = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false) else {
@@ -30,6 +30,8 @@ public final class CGEventKeySynthesizer: KeyEventSynthesizing, @unchecked Senda
         keyUpEvent.flags = .maskCommand
 
         keyDownEvent.post(tap: .cghidEventTap)
+        // 保持 15ms 的物理按压微延迟，确保跨进程事件循环与不同 UI 框架（WebKit/Electron/原生 App）能够稳定捕获
+        usleep(15_000)
         keyUpEvent.post(tap: .cghidEventTap)
 
         return true

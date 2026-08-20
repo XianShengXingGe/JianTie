@@ -3,6 +3,8 @@ import CoreGraphics
 @testable import JianTieCore
 
 private final class MockPreferences: PreferencesProviding, @unchecked Sendable {
+    var launchAtLogin: Bool = true
+    var hasConfiguredLaunchAtLogin: Bool = true
     var shelfEdge: ShelfEdge = .left
     var clipboardCapacityLimit: ClipboardCapacityLimit = .count1000
     var clipboardRetentionPeriod: ClipboardRetentionPeriod = .unlimited
@@ -168,6 +170,7 @@ final class ShelfEngineEdgeSwitchingTests: XCTestCase {
         let engine = ShelfEngine(
             preferences: mockPrefs,
             dragMonitor: mockDrag,
+            screensProvider: { [screen1, screen2] },
             autoStart: false
         )
 
@@ -195,5 +198,45 @@ final class ShelfEngineEdgeSwitchingTests: XCTestCase {
             XCTFail("Expected revealedDragging state with screen1 frame")
         }
         XCTAssertEqual(revealedVisibleFrame?.minX, 8.0) // Screen 1 left margin
+    }
+
+    func test_dropFiles_onSecondaryScreen_anchorsShelfToSecondaryScreenUntilEmpty() {
+        let screen1 = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
+        )
+        let screen2 = ScreenInfo(
+            frame: CGRect(x: 1920, y: 0, width: 2560, height: 1440),
+            visibleFrame: CGRect(x: 1920, y: 25, width: 2560, height: 1415)
+        )
+
+        let engine = ShelfEngine(
+            preferences: mockPrefs,
+            dragMonitor: mockDrag,
+            screensProvider: { [screen1, screen2] },
+            autoStart: false
+        )
+
+        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try? "test".write(to: tempFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+
+        // 1. 在副屏 (Screen 2) 拖拽开始并存入文件
+        engine.handleDragStarted(files: [tempFile], at: CGPoint(x: 2100, y: 500))
+        let stack = engine.dropFiles([tempFile], on: screen2)
+        XCTAssertNotNil(stack)
+
+        // 验证：Shelf 状态为 stored 且固定在 Screen 2
+        XCTAssertEqual(engine.state, .stored(screenFrame: screen2.frame, edge: .left))
+
+        // 2. 模拟拖拽结束（由于 Shelf 内有文件，不应被 dismiss，而应继续留在 Screen 2）
+        engine.handleDragEnded()
+        XCTAssertEqual(engine.state, .stored(screenFrame: screen2.frame, edge: .left))
+
+        // 3. 移除 Stack 后，Shelf 应该自动收回并重置
+        if let stackId = stack?.id {
+            engine.removeStack(id: stackId)
+            XCTAssertEqual(engine.state, .hidden)
+        }
     }
 }

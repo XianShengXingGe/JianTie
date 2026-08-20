@@ -5,6 +5,8 @@ public final class UserDefaultsPreferences: PreferencesProviding, @unchecked Sen
     public static let shared = UserDefaultsPreferences()
 
     public enum Keys {
+        public static let launchAtLogin = "jiantie.general.launchAtLogin"
+        public static let hasConfiguredLaunchAtLogin = "jiantie.general.hasConfiguredLaunchAtLogin"
         public static let shelfEdge = "jiantie.shelf.edge"
         public static let clipboardCapacityLimit = "jiantie.clipboard.capacityLimit"
         public static let clipboardRetentionPeriod = "jiantie.clipboard.retentionPeriod"
@@ -15,6 +17,35 @@ public final class UserDefaultsPreferences: PreferencesProviding, @unchecked Sen
 
     public init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
+    }
+
+    public var launchAtLogin: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            guard userDefaults.object(forKey: Keys.launchAtLogin) != nil else {
+                return true
+            }
+            return userDefaults.bool(forKey: Keys.launchAtLogin)
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            userDefaults.set(newValue, forKey: Keys.launchAtLogin)
+        }
+    }
+
+    public var hasConfiguredLaunchAtLogin: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return userDefaults.bool(forKey: Keys.hasConfiguredLaunchAtLogin)
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            userDefaults.set(newValue, forKey: Keys.hasConfiguredLaunchAtLogin)
+        }
     }
 
     public var shelfEdge: ShelfEdge {

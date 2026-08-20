@@ -25,7 +25,7 @@ public final class ShelfQuickLookController: NSObject, QLPreviewPanelDataSource,
     private var localKeyMonitor: Any?
     private var globalKeyMonitor: Any?
 
-    public init(coordinator: ShelfQuickLookCoordinator = .shared) {
+    public init(coordinator: ShelfQuickLookCoordinator) {
         self.coordinator = coordinator
         super.init()
 
@@ -36,6 +36,10 @@ public final class ShelfQuickLookController: NSObject, QLPreviewPanelDataSource,
         coordinator.onClosePreview = { [weak self] in
             self?.dismissQuickLookPanel()
         }
+    }
+
+    public convenience override init() {
+        self.init(coordinator: .shared)
     }
 
     // MARK: - Hover Key Monitoring

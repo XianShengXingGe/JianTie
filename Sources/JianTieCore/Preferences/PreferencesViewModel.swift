@@ -4,6 +4,7 @@ import Combine
 /// 偏好设置视图模型，管理 Shelf 边缘配置、剪贴板容量生命周期、权限状态与版本展示
 @MainActor
 public final class PreferencesViewModel: ObservableObject {
+    @Published public var launchAtLogin: Bool
     @Published public var shelfEdge: ShelfEdge {
         didSet {
             preferences.shelfEdge = shelfEdge
@@ -29,6 +30,7 @@ public final class PreferencesViewModel: ObservableObject {
     @Published public private(set) var isAccessibilityTrusted: Bool
 
     public let preferences: PreferencesProviding
+    public let launchAtLoginService: LaunchAtLoginProviding
     public let accessibilityService: AccessibilityPermissionProviding
     public weak var shelfEngine: ShelfEngine?
     public weak var clipboardEngine: ClipboardEngine?
@@ -36,16 +38,19 @@ public final class PreferencesViewModel: ObservableObject {
 
     public init(
         preferences: PreferencesProviding = UserDefaultsPreferences.shared,
+        launchAtLoginService: LaunchAtLoginProviding = LaunchAtLoginService.shared,
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
         shelfEngine: ShelfEngine? = nil,
         clipboardEngine: ClipboardEngine? = nil,
         bundle: Bundle = .main
     ) {
         self.preferences = preferences
+        self.launchAtLoginService = launchAtLoginService
         self.accessibilityService = accessibilityService
         self.shelfEngine = shelfEngine
         self.clipboardEngine = clipboardEngine
         self.bundle = bundle
+        self.launchAtLogin = launchAtLoginService.isEnabled
         self.shelfEdge = preferences.shelfEdge
         self.clipboardCapacityLimit = preferences.clipboardCapacityLimit
         self.clipboardRetentionPeriod = preferences.clipboardRetentionPeriod
@@ -65,6 +70,17 @@ public final class PreferencesViewModel: ObservableObject {
     /// 剪贴板历史保留容量说明
     public var clipboardRetentionDescription: String {
         return "支持智能文本与图片 (SHA-256) 去重前置。超出容量将按先进先出 (FIFO) 自动淘汰，超期条目自动修剪。"
+    }
+
+    /// 设置开机自启（随系统启动）
+    public func setLaunchAtLogin(_ enabled: Bool) {
+        if enabled {
+            _ = launchAtLoginService.register()
+        } else {
+            _ = launchAtLoginService.unregister()
+        }
+        self.launchAtLogin = launchAtLoginService.isEnabled
+        self.preferences.launchAtLogin = self.launchAtLogin
     }
 
     /// 切换 Shelf 屏幕停靠边缘
@@ -90,9 +106,24 @@ public final class PreferencesViewModel: ObservableObject {
         clipboardEngine?.clearHistory()
     }
 
+    /// 刷新开机自启系统级状态
+    public func refreshLaunchAtLoginStatus() {
+        let systemEnabled = launchAtLoginService.isEnabled
+        if self.launchAtLogin != systemEnabled {
+            self.launchAtLogin = systemEnabled
+            self.preferences.launchAtLogin = systemEnabled
+        }
+    }
+
     /// 刷新辅助功能授权状态
     public func refreshAccessibilityStatus() {
         self.isAccessibilityTrusted = accessibilityService.isTrusted
+    }
+
+    /// 统一刷新所有系统级与权限状态
+    public func refreshStatus() {
+        refreshAccessibilityStatus()
+        refreshLaunchAtLoginStatus()
     }
 
     /// 唤起系统辅助功能权限设置页并触发授权提示

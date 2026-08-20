@@ -2,6 +2,23 @@ import SwiftUI
 import AppKit
 import JianTieCore
 
+/// 偏好设置键盘与事件响应窗口
+public final class PreferencesPanelWindow: NSWindow {
+    public var onEscape: (() -> Void)?
+
+    public override func sendEvent(_ event: NSEvent) {
+        if event.type == .keyDown && event.keyCode == 53 { // ESC 键
+            onEscape?()
+            return
+        }
+        super.sendEvent(event)
+    }
+
+    public override func cancelOperation(_ sender: Any?) {
+        onEscape?()
+    }
+}
+
 /// 偏好设置独立窗口控制器
 @MainActor
 public final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
@@ -10,8 +27,8 @@ public final class PreferencesWindowController: NSWindowController, NSWindowDele
     public init(viewModel: PreferencesViewModel) {
         self.viewModel = viewModel
 
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 540),
+        let window = PreferencesPanelWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 600),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -19,6 +36,9 @@ public final class PreferencesWindowController: NSWindowController, NSWindowDele
         window.title = "偏好设置"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.standardWindowButton(.closeButton)?.isHidden = true
+        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        window.standardWindowButton(.zoomButton)?.isHidden = true
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = true
@@ -29,7 +49,16 @@ public final class PreferencesWindowController: NSWindowController, NSWindowDele
         super.init(window: window)
         window.delegate = self
 
-        let rootView = PreferencesView(viewModel: viewModel)
+        window.onEscape = { [weak self] in
+            self?.closeWindow()
+        }
+
+        let rootView = PreferencesView(
+            viewModel: viewModel,
+            onClose: { [weak self] in
+                self?.closeWindow()
+            }
+        )
         window.contentView = NSHostingView(rootView: rootView)
     }
 
@@ -41,7 +70,7 @@ public final class PreferencesWindowController: NSWindowController, NSWindowDele
     public func showWindow() {
         guard let window = self.window else { return }
 
-        viewModel.refreshAccessibilityStatus()
+        viewModel.refreshStatus()
 
         if !window.isVisible {
             window.center()
@@ -51,9 +80,18 @@ public final class PreferencesWindowController: NSWindowController, NSWindowDele
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    /// 立即隐藏并收起偏好设置窗口
+    public func closeWindow() {
+        self.window?.orderOut(nil)
+    }
+
     // MARK: - NSWindowDelegate
 
     public func windowDidBecomeKey(_ notification: Notification) {
-        viewModel.refreshAccessibilityStatus()
+        viewModel.refreshStatus()
+    }
+
+    public func windowDidBecomeMain(_ notification: Notification) {
+        viewModel.refreshStatus()
     }
 }
