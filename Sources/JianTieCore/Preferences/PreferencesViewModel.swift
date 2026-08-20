@@ -94,10 +94,25 @@ public final class PreferencesViewModel: ObservableObject {
         self.preferences.launchAtLogin = self.launchAtLogin
     }
 
+    /// 是否为默认全局快捷键 (双击 ⌘)
+    public var isDefaultHotKey: Bool {
+        return hotKeyTrigger == .default
+    }
+
     /// 设置全局快捷键
     public func setHotKeyTrigger(_ trigger: HotKeyTrigger) {
         guard self.hotKeyTrigger != trigger else { return }
         self.hotKeyTrigger = trigger
+    }
+
+    /// 一键重置为默认全局快捷键 (双击 ⌘)
+    public func resetHotKeyToDefault() {
+        setHotKeyTrigger(.default)
+    }
+
+    /// 设置为双击修饰键模式
+    public func setDoubleTapModifier(_ modifier: ModifierKey) {
+        setHotKeyTrigger(.doubleTap(modifier: modifier))
     }
 
     /// 切换 Shelf 屏幕停靠边缘

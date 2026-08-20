@@ -181,6 +181,21 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(mockPrefs.hotKeyTrigger, newTrigger)
         XCTAssertEqual(mockHotKey.updatedTriggers, [newTrigger])
         XCTAssertEqual(mockHotKey.currentTrigger, newTrigger)
+        XCTAssertFalse(vm.isDefaultHotKey)
+
+        // 切换为双击 Option
+        vm.setDoubleTapModifier(.option)
+        XCTAssertEqual(vm.hotKeyTrigger, .doubleTap(modifier: .option))
+        XCTAssertEqual(mockPrefs.hotKeyTrigger, .doubleTap(modifier: .option))
+        XCTAssertEqual(mockHotKey.currentTrigger, .doubleTap(modifier: .option))
+        XCTAssertFalse(vm.isDefaultHotKey)
+
+        // 一键重置为默认值 (双击 ⌘)
+        vm.resetHotKeyToDefault()
+        XCTAssertEqual(vm.hotKeyTrigger, .default)
+        XCTAssertEqual(mockPrefs.hotKeyTrigger, .default)
+        XCTAssertEqual(mockHotKey.currentTrigger, .default)
+        XCTAssertTrue(vm.isDefaultHotKey)
     }
 
     func test_preferencesViewModel_setLaunchAtLogin_registersAndUnregisters() {

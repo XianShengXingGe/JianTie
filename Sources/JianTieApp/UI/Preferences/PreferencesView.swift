@@ -7,10 +7,12 @@ public struct PreferencesView: View {
     @ObservedObject public var viewModel: PreferencesViewModel
     public var onClose: (() -> Void)?
     @State private var showDonationModal: Bool = false
+    @StateObject private var hotKeyRecorderViewModel: HotKeyRecorderViewModel
 
     public init(viewModel: PreferencesViewModel, onClose: (() -> Void)? = nil) {
         self.viewModel = viewModel
         self.onClose = onClose
+        self._hotKeyRecorderViewModel = StateObject(wrappedValue: HotKeyRecorderViewModel(preferencesViewModel: viewModel))
     }
 
     public var body: some View {
@@ -167,15 +169,18 @@ public struct PreferencesView: View {
                         sectionLabel(title: "剪贴板历史 (Clipboard)", icon: "clock.arrow.circlepath")
 
                         VStack(alignment: .leading, spacing: 10) {
-                            HStack {
-                                Text("全局唤出快捷键")
-                                    .font(.body)
+                            HStack(alignment: .center) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("全局唤出快捷键")
+                                        .font(.body)
+                                    Text("支持点击录制或选择双击修饰键")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                }
+
                                 Spacer()
-                                Text("双击 ⌘ Command")
-                                    .font(.system(.subheadline, design: .monospaced))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .liquidGlassBadge(isCapsule: false, cornerRadius: 5)
+
+                                HotKeyRecorderView(viewModel: hotKeyRecorderViewModel)
                             }
 
                             Divider()

@@ -4,6 +4,15 @@ import Foundation
 public enum HotKeyValidationError: Error, Equatable, Sendable {
     case modifierRequired
     case invalidKeyCode
+
+    public var localizedDescription: String {
+        switch self {
+        case .modifierRequired:
+            return "快捷键必须包含修饰键 (⌘/⌥/⌃/⇧)"
+        case .invalidKeyCode:
+            return "无效的按键组合"
+        }
+    }
 }
 
 /// 快捷键校验结果
