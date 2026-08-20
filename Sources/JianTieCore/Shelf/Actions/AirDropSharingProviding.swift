@@ -1,7 +1,5 @@
 import Foundation
-#if canImport(AppKit)
 import AppKit
-#endif
 
 /// AirDrop 系统分享服务协议，解耦具体 AppKit 实现以支持无头单元测试
 @MainActor
@@ -13,7 +11,6 @@ public protocol AirDropSharingProviding: AnyObject, Sendable {
     func performAirDrop(urls: [URL], onCompletion: @escaping @MainActor (Bool) -> Void)
 }
 
-#if canImport(AppKit)
 /// 基于 AppKit NSSharingService 的原生 AirDrop 分享服务实现
 @MainActor
 public final class SystemAirDropService: NSObject, AirDropSharingProviding, NSSharingServiceDelegate, @unchecked Sendable {
@@ -68,4 +65,3 @@ public final class SystemAirDropService: NSObject, AirDropSharingProviding, NSSh
         }
     }
 }
-#endif

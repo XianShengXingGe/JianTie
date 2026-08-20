@@ -1,8 +1,6 @@
 import Foundation
 import CoreGraphics
-#if canImport(AppKit)
 import AppKit
-#endif
 
 /// 边缘停留与自动缩回监听器
 public final class ShelfEdgeMonitor: @unchecked Sendable {
@@ -26,11 +24,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
     public init(
         detector: EdgeDwellDetector = EdgeDwellDetector(),
         screensProvider: @escaping @Sendable () -> [ScreenInfo] = {
-            #if canImport(AppKit)
             return ScreenInfo.currentScreens()
-            #else
-            return []
-            #endif
         },
         edgeProvider: @escaping @Sendable () -> ShelfEdge = { .left },
         isRevealedProvider: @escaping @Sendable () -> Bool = { false },
@@ -56,7 +50,6 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
         self.isMonitoring = true
         self.detector.reset()
 
-        #if canImport(AppKit)
         // 1. 监听全局鼠标移动
         self.globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.mouseMoved]
@@ -79,7 +72,6 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
                 self?.processHeartbeat()
             }
         }
-        #endif
     }
 
     public func stopMonitoring() {
@@ -88,7 +80,6 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
 
         guard isMonitoring else { return }
 
-        #if canImport(AppKit)
         if let monitor = globalMouseMonitor {
             NSEvent.removeMonitor(monitor)
             globalMouseMonitor = nil
@@ -101,7 +92,6 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
             self?.heartbeatTimer?.invalidate()
             self?.heartbeatTimer = nil
         }
-        #endif
 
         onDwellTrigger = nil
         onRetractTrigger = nil

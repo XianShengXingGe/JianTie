@@ -1,8 +1,6 @@
 import Foundation
 import CoreGraphics
-#if canImport(AppKit)
 import AppKit
-#endif
 
 /// 屏幕几何描述结构体，解耦具体 NSScreen 对象以支持纯逻辑单元测试
 public struct ScreenInfo: Equatable, Sendable {
@@ -14,7 +12,6 @@ public struct ScreenInfo: Equatable, Sendable {
         self.visibleFrame = visibleFrame
     }
 
-    #if canImport(AppKit)
     public init(screen: NSScreen) {
         self.frame = screen.frame
         self.visibleFrame = screen.visibleFrame
@@ -23,7 +20,6 @@ public struct ScreenInfo: Equatable, Sendable {
     public static func currentScreens() -> [ScreenInfo] {
         return NSScreen.screens.map { ScreenInfo(screen: $0) }
     }
-    #endif
 }
 
 /// 多屏几何与 Shelf 窗口坐标计算器

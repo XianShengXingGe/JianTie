@@ -52,7 +52,9 @@ public struct ShelfActionZoneView: View {
         )
         .contentShape(Rectangle())
         .onDrop(of: [.fileURL], isTargeted: $isAirDropTargeted) { providers in
-            handleAirDropDrop(providers: providers)
+            handleActionDrop(providers: providers) { urls, stackId in
+                engine.handleAirDrop(urls: urls, sourceStackId: stackId)
+            }
             return true
         }
     }
@@ -100,29 +102,24 @@ public struct ShelfActionZoneView: View {
         )
         .contentShape(Rectangle())
         .onDrop(of: [.fileURL], isTargeted: $isCopyPathTargeted) { providers in
-            handleCopyPathDrop(providers: providers)
+            handleActionDrop(providers: providers) { urls, stackId in
+                engine.handleCopyPath(urls: urls, sourceStackId: stackId)
+            }
             return true
         }
     }
 
     // MARK: - Drop Handling
 
-    private func handleAirDropDrop(providers: [NSItemProvider]) {
+    private func handleActionDrop(
+        providers: [NSItemProvider],
+        action: @escaping @MainActor ([URL], UUID?) -> Void
+    ) {
         extractURLs(from: providers) { urls in
             let effectiveURLs = !urls.isEmpty ? urls : (engine.activeDraggingStack?.resolvedURLs ?? [])
             guard !effectiveURLs.isEmpty else { return }
             withAnimation(.easeInOut(duration: 0.2)) {
-                engine.handleAirDrop(urls: effectiveURLs, sourceStackId: engine.activeDraggingStack?.id)
-            }
-        }
-    }
-
-    private func handleCopyPathDrop(providers: [NSItemProvider]) {
-        extractURLs(from: providers) { urls in
-            let effectiveURLs = !urls.isEmpty ? urls : (engine.activeDraggingStack?.resolvedURLs ?? [])
-            guard !effectiveURLs.isEmpty else { return }
-            withAnimation(.easeInOut(duration: 0.2)) {
-                engine.handleCopyPath(urls: effectiveURLs, sourceStackId: engine.activeDraggingStack?.id)
+                action(effectiveURLs, engine.activeDraggingStack?.id)
             }
         }
     }

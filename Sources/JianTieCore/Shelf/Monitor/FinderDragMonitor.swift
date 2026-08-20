@@ -1,8 +1,6 @@
 import Foundation
 import CoreGraphics
-#if canImport(AppKit)
 import AppKit
-#endif
 
 /// 系统级 Finder 文件拖拽监听器
 public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
@@ -23,7 +21,6 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
 
     public init(
         dragPasteboardReader: @escaping @Sendable () -> [URL] = {
-            #if canImport(AppKit)
             let pboard = NSPasteboard(name: .drag)
             guard let items = pboard.pasteboardItems, !items.isEmpty else { return [] }
             // 检查是否包含文件类型
@@ -35,9 +32,6 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
 
             guard hasFiles else { return [] }
             return pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] ?? []
-            #else
-            return []
-            #endif
         }
     ) {
         self.dragPasteboardReader = dragPasteboardReader
@@ -56,7 +50,6 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
         self.isMonitoring = true
         self.isDraggingActive = false
 
-        #if canImport(AppKit)
         // 1. 全局监听拖拽与鼠标释放
         self.globalDragMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDragged]
@@ -84,7 +77,6 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
             self?.processMouseUpEvent()
             return event
         }
-        #endif
     }
 
     public func stopMonitoring() {
@@ -93,7 +85,6 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
 
         guard isMonitoring else { return }
 
-        #if canImport(AppKit)
         if let monitor = globalDragMonitor {
             NSEvent.removeMonitor(monitor)
             globalDragMonitor = nil
@@ -110,7 +101,6 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
             NSEvent.removeMonitor(monitor)
             localMouseUpMonitor = nil
         }
-        #endif
 
         dragStartHandler = nil
         dragEndHandler = nil

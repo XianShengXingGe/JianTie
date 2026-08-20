@@ -101,6 +101,11 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         fatalError("init(coder:) has not been implemented")
     }
 
+    private enum ActionZoneLayout {
+        static let copyPathHeightRange: Range<CGFloat> = 0..<46
+        static let airDropHeightRange: Range<CGFloat> = 46..<86
+    }
+
     private func setupContentView(window: ShelfPanelWindow) {
         let rootView = ShelfPanelView(engine: engine)
         let hostView = ShelfContainerHostView(rootView: rootView)
@@ -117,11 +122,10 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         hostView.onActionDrop = { [weak self] location, urls in
             guard let self = self, self.engine.isActionZoneVisible else { return false }
             // Cocoa 坐标系：原点在左下角
-            // 底部 0~46 为 Copy Path，46~86 为 AirDrop
-            if location.y >= 0 && location.y < 46 {
+            if ActionZoneLayout.copyPathHeightRange.contains(location.y) {
                 self.engine.handleCopyPath(urls: urls)
                 return true
-            } else if location.y >= 46 && location.y < 86 {
+            } else if ActionZoneLayout.airDropHeightRange.contains(location.y) {
                 self.engine.handleAirDrop(urls: urls)
                 return true
             }

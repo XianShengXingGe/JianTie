@@ -1,9 +1,7 @@
 import Foundation
 import CoreGraphics
 import Combine
-#if canImport(AppKit)
 import AppKit
-#endif
 
 /// 线程安全的跨线程状态共享容器
 final class SharedShelfState: @unchecked Sendable {
@@ -98,13 +96,8 @@ public final class ShelfEngine: ObservableObject {
         self.edge = initialEdge
         self.geometryCalculator = geometryCalculator
         self.pruner = pruner ?? ShelfPruner()
-        #if canImport(AppKit)
         self.airDropService = airDropService ?? SystemAirDropService()
         self.pasteboardWriter = pasteboardWriter ?? SystemPasteboardWriter()
-        #else
-        self.airDropService = airDropService ?? MockAirDropFallback()
-        self.pasteboardWriter = pasteboardWriter ?? MockPasteboardFallback()
-        #endif
         self.sharedState.edge = initialEdge
         self.sharedState.isRevealed = false
 
@@ -113,13 +106,7 @@ public final class ShelfEngine: ObservableObject {
 
         let capturedShared = self.sharedState
         let actualEdgeMonitor = edgeMonitor ?? ShelfEdgeMonitor(
-            screensProvider: {
-                #if canImport(AppKit)
-                return ScreenInfo.currentScreens()
-                #else
-                return []
-                #endif
-            },
+            screensProvider: { ScreenInfo.currentScreens() },
             edgeProvider: { capturedShared.edge },
             isRevealedProvider: { capturedShared.isRevealed }
         )
@@ -199,12 +186,7 @@ public final class ShelfEngine: ObservableObject {
         let stack = ShelfStack(files: references)
         stacks.insert(stack, at: 0)
 
-        #if canImport(AppKit)
         let screens = ScreenInfo.currentScreens()
-        #else
-        let screens: [ScreenInfo] = []
-        #endif
-
         let screen = activeScreen ?? screens.first
         self.activeScreen = screen
 
@@ -302,11 +284,7 @@ public final class ShelfEngine: ObservableObject {
         } else {
             // 拖拽取消或失败，安全保留 Stack 并恢复为 Stored 状态
             if !stacks.isEmpty {
-                #if canImport(AppKit)
                 let screens = ScreenInfo.currentScreens()
-                #else
-                let screens: [ScreenInfo] = []
-                #endif
                 let screen = activeScreen ?? screens.first
                 let frame = screen?.frame ?? .zero
                 let newState = ShelfState.stored(screenFrame: frame, edge: edge)
@@ -331,12 +309,7 @@ public final class ShelfEngine: ObservableObject {
 
     /// 处理 Finder 拖拽开始事件
     public func handleDragStarted(files: [URL], at location: CGPoint) {
-        #if canImport(AppKit)
         let screens = ScreenInfo.currentScreens()
-        #else
-        let screens: [ScreenInfo] = []
-        #endif
-
         guard let screen = geometryCalculator.findScreen(for: location, in: screens) ?? screens.first else {
             return
         }
@@ -406,13 +379,7 @@ public final class ShelfEngine: ObservableObject {
     public func dismiss() {
         guard state.isVisible else { return }
 
-        let screen = activeScreen ?? {
-            #if canImport(AppKit)
-            return ScreenInfo.currentScreens().first
-            #else
-            return nil
-            #endif
-        }()
+        let screen = activeScreen ?? ScreenInfo.currentScreens().first
 
         if let screen = screen {
             let (_, hiddenFrame) = geometryCalculator.calculateWindowFrames(screen: screen, edge: edge)
@@ -426,11 +393,7 @@ public final class ShelfEngine: ObservableObject {
 
     private func updateRevealedPositionForCurrentEdge() {
         guard state.isVisible else { return }
-        #if canImport(AppKit)
         let screens = ScreenInfo.currentScreens()
-        #else
-        let screens: [ScreenInfo] = []
-        #endif
         let screen = activeScreen ?? screens.first
         guard let screen = screen else { return }
 
