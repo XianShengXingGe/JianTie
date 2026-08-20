@@ -177,9 +177,72 @@ public struct ShelfGeometryCalculator: Sendable {
         return CGRect(x: clampedX, y: clampedY, width: popoverSize.width, height: popoverSize.height)
     }
 
+    /// 限制 Shelf 窗口在拖拽过程中严格处于屏幕的安全可视区域 (visibleFrame) 内，防止与 Menu Bar 和 Dock 产生遮挡或穿透
+    /// - Parameters:
+    ///   - frame: 当前待限制的 Shelf Frame
+    ///   - screen: 当前所在的屏幕信息
+    /// - Returns: 限制在 visibleFrame 内部的有效 Frame
+    public func clampFrameToVisibleBounds(_ frame: CGRect, screen: ScreenInfo) -> CGRect {
+        let visibleBounds = screen.visibleFrame
+        let minX = visibleBounds.minX
+        let maxX = max(minX, visibleBounds.maxX - frame.width)
+        let clampedX = min(max(frame.origin.x, minX), maxX)
+
+        let minY = visibleBounds.minY
+        let maxY = max(minY, visibleBounds.maxY - frame.height)
+        let clampedY = min(max(frame.origin.y, minY), maxY)
+
+        return CGRect(x: clampedX, y: clampedY, width: frame.width, height: frame.height)
+    }
+
+    /// 依据 Shelf 面板所在的横向屏幕中线划分，判断所属的目标贴边边缘
+    /// - Parameters:
+    ///   - frame: Shelf 面板当前 Frame
+    ///   - screen: 当前所在的屏幕信息
+    /// - Returns: 所属边缘 (.left / .right)
+    public func determineEdge(for frame: CGRect, in screen: ScreenInfo) -> ShelfEdge {
+        return frame.midX < screen.frame.midX ? .left : .right
+    }
+
+    /// 计算 Shelf 面板在当前屏幕可视区域内的归一化垂直比例 (0.0 ~ 1.0)
+    /// - Parameters:
+    ///   - frame: Shelf 面板当前 Frame
+    ///   - screen: 当前所在的屏幕信息
+    /// - Returns: 归一化垂直比例 (0.0 表示底部贴紧 visibleFrame.minY，1.0 表示顶部贴紧 visibleFrame.maxY)
+    public func calculateVerticalPercent(for frame: CGRect, in screen: ScreenInfo) -> CGFloat {
+        let visibleBounds = screen.visibleFrame
+        let availableHeight = max(0, visibleBounds.height - windowSize.height)
+        guard availableHeight > 0 else { return 0.5 }
+
+        let relativeY = frame.minY - visibleBounds.minY
+        let percent = relativeY / availableHeight
+        return min(max(percent, 0.0), 1.0)
+    }
+
+    /// 根据拖拽释放时的位置，计算吸附的目标边缘、归一化垂直比例与最终吸附可见 Frame
+    /// - Parameters:
+    ///   - currentFrame: 释放时的 Shelf Frame
+    ///   - screen: 当前所在的屏幕信息
+    /// - Returns: (edge: 目标吸附边缘, verticalPercent: 垂直比例, snappedFrame: 吸附后展示的完整 Frame)
+    public func calculateSnappedPosition(
+        currentFrame: CGRect,
+        screen: ScreenInfo
+    ) -> (edge: ShelfEdge, verticalPercent: CGFloat, snappedFrame: CGRect) {
+        let clamped = clampFrameToVisibleBounds(currentFrame, screen: screen)
+        let edge = determineEdge(for: clamped, in: screen)
+        let verticalPercent = calculateVerticalPercent(for: clamped, in: screen)
+        let (visibleFrame, _) = calculateWindowFrames(
+            screen: screen,
+            edge: edge,
+            verticalPercent: verticalPercent
+        )
+        return (edge: edge, verticalPercent: verticalPercent, snappedFrame: visibleFrame)
+    }
+
     private func distance(from point: CGPoint, to rect: CGRect) -> CGFloat {
         let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
         let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
         return sqrt(dx * dx + dy * dy)
     }
 }
+

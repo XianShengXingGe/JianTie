@@ -346,4 +346,92 @@ final class ShelfEngineEdgeSwitchingTests: XCTestCase {
         let overlapWithScreen1 = hideFrame!.intersection(screen1.frame)
         XCTAssertTrue(overlapWithScreen1.isNull || overlapWithScreen1.width <= 0)
     }
+
+    // MARK: - Interactive Panel Dragging & Snapping Engine Tests
+
+    func test_panelDragLifecycle_tracksIsPanelDragging() {
+        let engine = ShelfEngine(
+            preferences: mockPrefs,
+            dragMonitor: mockDrag,
+            autoStart: false
+        )
+
+        XCTAssertFalse(engine.isPanelDragging)
+
+        engine.notifyPanelDragStarted()
+        XCTAssertTrue(engine.isPanelDragging)
+
+        engine.notifyPanelDragEnded(
+            finalFrame: CGRect(x: 100, y: 300, width: 140, height: 320),
+            on: testScreen
+        )
+        XCTAssertFalse(engine.isPanelDragging)
+    }
+
+    func test_notifyPanelDragMoved_crossingMidpoint_flipsEdgeAndUpdatesPreferences() {
+        let engine = ShelfEngine(
+            preferences: mockPrefs,
+            dragMonitor: mockDrag,
+            autoStart: false
+        )
+
+        XCTAssertEqual(engine.edge, .left)
+
+        engine.notifyPanelDragStarted()
+
+        // 移动到右半屏 (x: 1200)
+        engine.notifyPanelDragMoved(
+            to: CGRect(x: 1200, y: 300, width: 140, height: 320),
+            on: testScreen
+        )
+
+        XCTAssertEqual(engine.edge, .right)
+        XCTAssertEqual(mockPrefs.shelfEdge, .right)
+
+        // 移动回左半屏 (x: 200)
+        engine.notifyPanelDragMoved(
+            to: CGRect(x: 200, y: 300, width: 140, height: 320),
+            on: testScreen
+        )
+
+        XCTAssertEqual(engine.edge, .left)
+        XCTAssertEqual(mockPrefs.shelfEdge, .left)
+    }
+
+    func test_notifyPanelDragEnded_snapsToNearestEdgeAndSavesVerticalPercent() {
+        let engine = ShelfEngine(
+            preferences: mockPrefs,
+            dragMonitor: mockDrag,
+            autoStart: false
+        )
+
+        var requestedRevealFrame: CGRect?
+        engine.onRequestReveal = { visible, _, _ in
+            requestedRevealFrame = visible
+        }
+
+        // 打开 Shelf
+        engine.handleEdgeDwell(on: testScreen)
+        XCTAssertEqual(engine.edge, .left)
+
+        engine.notifyPanelDragStarted()
+        XCTAssertTrue(engine.isPanelDragging)
+
+        // 拖拽到右半屏顶部 (y = 760) 并释放
+        let finalFrame = CGRect(x: 1500, y: 760, width: 140, height: 320)
+        let snapped = engine.notifyPanelDragEnded(finalFrame: finalFrame, on: testScreen)
+
+        XCTAssertFalse(engine.isPanelDragging)
+        XCTAssertEqual(snapped.edge, .right)
+        XCTAssertEqual(snapped.verticalPercent, 1.0)
+        XCTAssertEqual(engine.edge, .right)
+        XCTAssertEqual(mockPrefs.shelfEdge, .right)
+        XCTAssertEqual(engine.verticalPercent, 1.0)
+        XCTAssertEqual(mockPrefs.shelfVerticalPercent, 1.0)
+
+        XCTAssertNotNil(requestedRevealFrame)
+        XCTAssertEqual(requestedRevealFrame?.origin.x, 1920.0 - 140.0 - 8.0)
+        XCTAssertEqual(requestedRevealFrame?.origin.y, 760.0)
+    }
 }
+

@@ -373,4 +373,119 @@ final class ShelfGeometryTests: XCTestCase {
         XCTAssertEqual(frame.origin.y, 33.0)
         XCTAssertEqual(frame.origin.x, 140.0)
     }
+
+    // MARK: - Interactive Dragging & Snapping Tests
+
+    func test_clampFrameToVisibleBounds_withinBounds_returnsUnchanged() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
+        )
+        let frame = CGRect(x: 100, y: 200, width: 140, height: 320)
+        let clamped = calculator.clampFrameToVisibleBounds(frame, screen: screen)
+
+        XCTAssertEqual(clamped, frame)
+    }
+
+    func test_clampFrameToVisibleBounds_exceedsTopBottomLeftRight_clampsStrictly() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055) // maxY = 1080
+        )
+
+        // 1. 下边界溢出（进入 Dock / 负坐标）
+        let bottomFrame = CGRect(x: 100, y: 0, width: 140, height: 320)
+        let clampedBottom = calculator.clampFrameToVisibleBounds(bottomFrame, screen: screen)
+        XCTAssertEqual(clampedBottom.origin.y, 25.0)
+
+        // 2. 上边界溢出（进入 Menu Bar）
+        let topFrame = CGRect(x: 100, y: 900, width: 140, height: 320) // maxY = 1220 > 1080
+        let clampedTop = calculator.clampFrameToVisibleBounds(topFrame, screen: screen)
+        XCTAssertEqual(clampedTop.origin.y, 1080.0 - 320.0)
+
+        // 3. 左边界溢出
+        let leftFrame = CGRect(x: -50, y: 300, width: 140, height: 320)
+        let clampedLeft = calculator.clampFrameToVisibleBounds(leftFrame, screen: screen)
+        XCTAssertEqual(clampedLeft.origin.x, 0.0)
+
+        // 4. 右边界溢出
+        let rightFrame = CGRect(x: 1900, y: 300, width: 140, height: 320)
+        let clampedRight = calculator.clampFrameToVisibleBounds(rightFrame, screen: screen)
+        XCTAssertEqual(clampedRight.origin.x, 1920.0 - 140.0)
+    }
+
+    func test_determineEdge_leftAndRightHalves() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
+        )
+
+        // 屏幕中心 X = 960
+        // 1. 左半屏 (midX < 960)
+        let leftPanel = CGRect(x: 100, y: 300, width: 140, height: 320) // midX = 170
+        XCTAssertEqual(calculator.determineEdge(for: leftPanel, in: screen), .left)
+
+        // 2. 右半屏 (midX >= 960)
+        let rightPanel = CGRect(x: 1500, y: 300, width: 140, height: 320) // midX = 1570
+        XCTAssertEqual(calculator.determineEdge(for: rightPanel, in: screen), .right)
+
+        // 3. 刚好在中心左侧与右侧
+        let justLeft = CGRect(x: 960 - 140, y: 300, width: 140, height: 320) // midX = 890
+        XCTAssertEqual(calculator.determineEdge(for: justLeft, in: screen), .left)
+
+        let justRight = CGRect(x: 960, y: 300, width: 140, height: 320) // midX = 1030
+        XCTAssertEqual(calculator.determineEdge(for: justRight, in: screen), .right)
+    }
+
+    func test_calculateVerticalPercent_variousPositions() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
+        )
+        // availableHeight = 1055 - 320 = 735
+        // 1. 底部 (y = 25)
+        let bottom = CGRect(x: 100, y: 25, width: 140, height: 320)
+        XCTAssertEqual(calculator.calculateVerticalPercent(for: bottom, in: screen), 0.0)
+
+        // 2. 顶部 (y = 25 + 735 = 760)
+        let top = CGRect(x: 100, y: 760, width: 140, height: 320)
+        XCTAssertEqual(calculator.calculateVerticalPercent(for: top, in: screen), 1.0)
+
+        // 3. 居中 (y = 25 + 367.5 = 392.5)
+        let mid = CGRect(x: 100, y: 392.5, width: 140, height: 320)
+        XCTAssertEqual(calculator.calculateVerticalPercent(for: mid, in: screen), 0.5)
+
+        // 4. 超出边界 clamp
+        let underflow = CGRect(x: 100, y: -50, width: 140, height: 320)
+        XCTAssertEqual(calculator.calculateVerticalPercent(for: underflow, in: screen), 0.0)
+
+        let overflow = CGRect(x: 100, y: 900, width: 140, height: 320)
+        XCTAssertEqual(calculator.calculateVerticalPercent(for: overflow, in: screen), 1.0)
+    }
+
+    func test_calculateSnappedPosition_leftAndRightSnapping() {
+        let screen = ScreenInfo(
+            frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055)
+        )
+
+        // 1. 拖拽到左半屏中上位置
+        let leftDragged = CGRect(x: 300, y: 760, width: 140, height: 320)
+        let leftResult = calculator.calculateSnappedPosition(currentFrame: leftDragged, screen: screen)
+
+        XCTAssertEqual(leftResult.edge, .left)
+        XCTAssertEqual(leftResult.verticalPercent, 1.0)
+        XCTAssertEqual(leftResult.snappedFrame.origin.x, 8.0) // minX + edgeMargin
+        XCTAssertEqual(leftResult.snappedFrame.origin.y, 760.0)
+
+        // 2. 拖拽到右半屏中间位置
+        let rightDragged = CGRect(x: 1200, y: 392.5, width: 140, height: 320)
+        let rightResult = calculator.calculateSnappedPosition(currentFrame: rightDragged, screen: screen)
+
+        XCTAssertEqual(rightResult.edge, .right)
+        XCTAssertEqual(rightResult.verticalPercent, 0.5)
+        XCTAssertEqual(rightResult.snappedFrame.origin.x, 1920 - 140 - 8.0) // maxX - width - edgeMargin
+        XCTAssertEqual(rightResult.snappedFrame.origin.y, 392.5)
+    }
 }
+

@@ -106,8 +106,21 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         static let airDropHeightRange: Range<CGFloat> = 46..<86
     }
 
+    private var dragClickOffset: CGPoint?
+
     private func setupContentView(window: ShelfPanelWindow) {
-        let rootView = ShelfPanelView(engine: engine)
+        let rootView = ShelfPanelView(
+            engine: engine,
+            onPanelDragStart: { [weak self] in
+                self?.handlePanelDragStarted()
+            },
+            onPanelDragMove: { [weak self] in
+                self?.handlePanelDragMoved()
+            },
+            onPanelDragEnd: { [weak self] in
+                self?.handlePanelDragEnded()
+            }
+        )
         let hostView = ShelfContainerHostView(rootView: rootView)
         hostView.registerForDraggedTypes([.fileURL])
 
@@ -140,6 +153,62 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         window.contentView = hostView
     }
 
+    // MARK: - Interactive Panel Dragging & Snapping
+
+    /// 用户开始拖拽 Shelf 面板
+    public func handlePanelDragStarted() {
+        guard let window = self.window else { return }
+        ShelfHoverPopoverController.shared.hidePopover(animated: false)
+        ShelfQuickLookController.shared.stopHoverKeyMonitoring(closePreviewIfOpen: true)
+
+        let mouse = NSEvent.mouseLocation
+        self.dragClickOffset = CGPoint(x: mouse.x - window.frame.origin.x, y: mouse.y - window.frame.origin.y)
+        engine.notifyPanelDragStarted()
+    }
+
+    /// 用户拖拽 Shelf 面板移动过程中实时调用，限制在 visibleFrame 内并更新窗口坐标
+    public func handlePanelDragMoved() {
+        guard let window = self.window, let clickOffset = self.dragClickOffset else { return }
+        let mouse = NSEvent.mouseLocation
+        let proposedOrigin = CGPoint(x: mouse.x - clickOffset.x, y: mouse.y - clickOffset.y)
+        let proposedFrame = CGRect(origin: proposedOrigin, size: window.frame.size)
+
+        let currentScreen = resolveScreen(for: mouse)
+        let clampedFrame = engine.geometryCalculator.clampFrameToVisibleBounds(proposedFrame, screen: currentScreen)
+        window.setFrameOrigin(clampedFrame.origin)
+        engine.notifyPanelDragMoved(to: clampedFrame, on: currentScreen)
+    }
+
+    /// 用户结束拖拽释放 Shelf 面板，就近贴边吸附并触发平滑弹性动画
+    public func handlePanelDragEnded() {
+        guard let window = self.window else { return }
+        self.dragClickOffset = nil
+
+        let mouse = NSEvent.mouseLocation
+        let currentScreen = resolveScreen(for: mouse)
+        let snapped = engine.notifyPanelDragEnded(finalFrame: window.frame, on: currentScreen)
+        snapToPositionWithAnimation(to: snapped.snappedFrame)
+    }
+
+    /// 执行 320ms spring 弹性吸附动效
+    public func snapToPositionWithAnimation(to targetFrame: CGRect) {
+        guard let window = self.window else { return }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.32
+            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.175, 0.885, 0.32, 1.15)
+            context.allowsImplicitAnimation = true
+            window.animator().setFrame(targetFrame, display: true)
+        }
+    }
+
+    private func resolveScreen(for point: CGPoint) -> ScreenInfo {
+        let screens = ScreenInfo.currentScreens()
+        return engine.geometryCalculator.findScreen(for: point, in: screens)
+            ?? window?.screen.map { ScreenInfo(screen: $0) }
+            ?? screens.first
+            ?? ScreenInfo(frame: .zero, visibleFrame: .zero)
+    }
+
     private func bindEngine() {
         engine.onRequestReveal = { [weak self] visibleFrame, hiddenFrame, isDragging in
             self?.revealWithAnimation(visibleFrame: visibleFrame, hiddenFrame: hiddenFrame)
@@ -150,7 +219,7 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         }
     }
 
-    /// 执行 180ms ease-out 平滑滑入动效
+    /// 执行平滑滑入/展示动效
     public func revealWithAnimation(visibleFrame: CGRect, hiddenFrame: CGRect) {
         guard let window = self.window else { return }
 
@@ -162,8 +231,8 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         }
 
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.18 // 180ms 滑入
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            context.duration = 0.28
+            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.175, 0.885, 0.32, 1.15)
             context.allowsImplicitAnimation = true
             window.animator().setFrame(visibleFrame, display: true)
             window.animator().alphaValue = 1.0

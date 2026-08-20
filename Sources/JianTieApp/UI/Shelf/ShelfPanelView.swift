@@ -4,13 +4,32 @@ import JianTieCore
 /// Shelf 暂存架主视图，支持空状态提示、多 Stack 列表展示与底部动态 Action Zone
 public struct ShelfPanelView: View {
     @ObservedObject public var engine: ShelfEngine
+    public var onPanelDragStart: (() -> Void)?
+    public var onPanelDragMove: (() -> Void)?
+    public var onPanelDragEnd: (() -> Void)?
 
-    public init(engine: ShelfEngine) {
+    public init(
+        engine: ShelfEngine,
+        onPanelDragStart: (() -> Void)? = nil,
+        onPanelDragMove: (() -> Void)? = nil,
+        onPanelDragEnd: (() -> Void)? = nil
+    ) {
         self.engine = engine
+        self.onPanelDragStart = onPanelDragStart
+        self.onPanelDragMove = onPanelDragMove
+        self.onPanelDragEnd = onPanelDragEnd
     }
 
     public var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
+            // 顶部专属拖拽手柄条
+            ShelfGrabberView(
+                isDragging: engine.isPanelDragging,
+                onDragStart: onPanelDragStart,
+                onDragMove: onPanelDragMove,
+                onDragEnd: onPanelDragEnd
+            )
+
             if engine.stacks.isEmpty {
                 emptyStateView
             } else {
@@ -25,7 +44,31 @@ public struct ShelfPanelView: View {
         .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
+        .opacity(engine.isPanelDragging ? 0.92 : 1.0)
+        .shadow(
+            color: Color.black.opacity(engine.isPanelDragging ? 0.35 : 0.12),
+            radius: engine.isPanelDragging ? 22 : 8,
+            x: 0,
+            y: engine.isPanelDragging ? 8 : 2
+        )
         .animation(.spring(response: 0.28, dampingFraction: 0.8), value: engine.isActionZoneVisible)
+        .animation(.spring(response: 0.22, dampingFraction: 0.8), value: engine.isPanelDragging)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 4, coordinateSpace: .global)
+                .onChanged { _ in
+                    if !engine.isPanelDragging && !engine.isStackDragging {
+                        onPanelDragStart?()
+                    }
+                    if engine.isPanelDragging {
+                        onPanelDragMove?()
+                    }
+                }
+                .onEnded { _ in
+                    if engine.isPanelDragging {
+                        onPanelDragEnd?()
+                    }
+                }
+        )
     }
 
     // MARK: - Multi Stack Content

@@ -60,6 +60,7 @@ public final class ShelfEngine: ObservableObject {
 
     @Published public private(set) var stacks: [ShelfStack] = []
     @Published public private(set) var isStackDragging: Bool = false
+    @Published public private(set) var isPanelDragging: Bool = false
     @Published public private(set) var activeDraggingStack: ShelfStack?
     @Published public private(set) var actionFeedback: String?
 
@@ -420,6 +421,37 @@ public final class ShelfEngine: ObservableObject {
         edgeMonitor.notifyMouseExitedShelf()
     }
 
+    // MARK: - Interactive Panel Dragging & Snapping
+
+    /// 用户开始交互式拖拽 Shelf 面板
+    public func notifyPanelDragStarted() {
+        self.isPanelDragging = true
+    }
+
+    /// 用户拖拽 Shelf 面板移动过程中实时调用，检测是否跨越屏幕中线切换停靠边缘
+    public func notifyPanelDragMoved(to frame: CGRect, on screen: ScreenInfo) {
+        self.activeScreen = screen
+        let targetEdge = geometryCalculator.determineEdge(for: frame, in: screen)
+        if self.edge != targetEdge {
+            self.edge = targetEdge
+        }
+    }
+
+    /// 用户结束拖拽释放 Shelf 面板，计算就近吸附边缘与垂直比例，触发吸附动效并持久化
+    @discardableResult
+    public func notifyPanelDragEnded(
+        finalFrame: CGRect,
+        on screen: ScreenInfo
+    ) -> (edge: ShelfEdge, verticalPercent: CGFloat, snappedFrame: CGRect) {
+        self.activeScreen = screen
+
+        let snapped = geometryCalculator.calculateSnappedPosition(currentFrame: finalFrame, screen: screen)
+        self.isPanelDragging = false
+        updatePosition(edge: snapped.edge, verticalPercent: snapped.verticalPercent)
+
+        return snapped
+    }
+
     /// 交互式拖拽吸附更新 Shelf 停靠位置
     public func updatePosition(edge newEdge: ShelfEdge? = nil, verticalPercent newVerticalPercent: CGFloat? = nil) {
         if let newEdge = newEdge {
@@ -451,7 +483,7 @@ public final class ShelfEngine: ObservableObject {
     }
 
     private func updateRevealedPositionForCurrentEdge() {
-        guard state.isVisible else { return }
+        guard state.isVisible, !isPanelDragging else { return }
         let screens = screensProvider()
         let screen = activeScreen ?? screens.first
         guard let screen = screen else { return }
