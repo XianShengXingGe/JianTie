@@ -55,4 +55,14 @@ final class AppCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(settingsOpened)
     }
+
+    func test_start_startsClipboardMonitoring() {
+        let coordinator = AppCoordinator(
+            statusItemProvider: { nil }
+        )
+
+        coordinator.start()
+
+        XCTAssertNotNil(coordinator.clipboardEngine)
+    }
 }

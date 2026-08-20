@@ -6,6 +6,7 @@ import AppKit
 public final class AppCoordinator: NSObject {
     public let accessibilityService: AccessibilityPermissionProviding
     public let menuBuilder: StatusBarMenuBuilder
+    public let clipboardEngine: ClipboardEngine
     public let presentGuidanceHandler: () -> Void
     private let statusItemProvider: () -> NSStatusItem?
 
@@ -14,6 +15,7 @@ public final class AppCoordinator: NSObject {
     public init(
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
         menuBuilder: StatusBarMenuBuilder = StatusBarMenuBuilder(),
+        clipboardEngine: ClipboardEngine? = nil,
         presentGuidanceHandler: @escaping () -> Void = {},
         statusItemProvider: @escaping () -> NSStatusItem? = {
             NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -21,6 +23,7 @@ public final class AppCoordinator: NSObject {
     ) {
         self.accessibilityService = accessibilityService
         self.menuBuilder = menuBuilder
+        self.clipboardEngine = clipboardEngine ?? ClipboardEngine(autoStart: false)
         self.presentGuidanceHandler = presentGuidanceHandler
         self.statusItemProvider = statusItemProvider
         super.init()
@@ -29,6 +32,7 @@ public final class AppCoordinator: NSObject {
     public func start() {
         setupStatusItem()
         checkAccessibilityOnLaunch()
+        clipboardEngine.startMonitoring()
     }
 
     public func checkAccessibilityOnLaunch() {
