@@ -7,15 +7,23 @@ public final class AppCoordinator: NSObject {
     public let accessibilityService: AccessibilityPermissionProviding
     public let menuBuilder: StatusBarMenuBuilder
     public let clipboardEngine: ClipboardEngine
+    public let doubleTapMonitor: DoubleTapMonitoring
+    public let directPasteService: DirectPasteService
+    public let appActivator: AppActivating
     public let presentGuidanceHandler: () -> Void
     private let statusItemProvider: () -> NSStatusItem?
 
     public private(set) var statusItem: NSStatusItem?
+    public private(set) var lastFrontmostApp: AppTarget?
+    public var onDoubleTapCommand: (@Sendable (AppTarget?) -> Void)?
 
     public init(
         accessibilityService: AccessibilityPermissionProviding = AccessibilityPermissionService.shared,
         menuBuilder: StatusBarMenuBuilder = StatusBarMenuBuilder(),
         clipboardEngine: ClipboardEngine? = nil,
+        doubleTapMonitor: DoubleTapMonitoring = DoubleTapMonitor(),
+        directPasteService: DirectPasteService = DirectPasteService(),
+        appActivator: AppActivating = SystemAppActivator.shared,
         presentGuidanceHandler: @escaping () -> Void = {},
         statusItemProvider: @escaping () -> NSStatusItem? = {
             NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -24,6 +32,9 @@ public final class AppCoordinator: NSObject {
         self.accessibilityService = accessibilityService
         self.menuBuilder = menuBuilder
         self.clipboardEngine = clipboardEngine ?? ClipboardEngine(autoStart: false)
+        self.doubleTapMonitor = doubleTapMonitor
+        self.directPasteService = directPasteService
+        self.appActivator = appActivator
         self.presentGuidanceHandler = presentGuidanceHandler
         self.statusItemProvider = statusItemProvider
         super.init()
@@ -33,6 +44,27 @@ public final class AppCoordinator: NSObject {
         setupStatusItem()
         checkAccessibilityOnLaunch()
         clipboardEngine.startMonitoring()
+        startHotKeyMonitoring()
+    }
+
+    public func startHotKeyMonitoring() {
+        doubleTapMonitor.startMonitoring { [weak self] in
+            Task { @MainActor in
+                self?.handleDoubleTapCommand()
+            }
+        }
+    }
+
+    public func handleDoubleTapCommand() {
+        let frontmost = appActivator.frontmostApp()
+        self.lastFrontmostApp = frontmost
+        self.onDoubleTapCommand?(frontmost)
+    }
+
+    @discardableResult
+    public func pasteItem(_ item: ClipboardItem, to target: AppTarget? = nil) async -> Bool {
+        let targetApp = target ?? lastFrontmostApp
+        return await directPasteService.directPaste(item: item, target: targetApp)
     }
 
     public func checkAccessibilityOnLaunch() {
