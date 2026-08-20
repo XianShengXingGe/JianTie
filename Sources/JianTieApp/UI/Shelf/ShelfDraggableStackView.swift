@@ -54,26 +54,11 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
         self.onDiscard = onDiscard
         self.onDragOutEnded = onDragOutEnded
 
-        let cardView = ShelfStackCardView(
-            stack: stack,
-            isDragging: isDragging,
-            onDiscard: { [weak self] in
-                ShelfHoverPopoverController.shared.hidePopover(animated: false)
-                self?.onDiscard?()
-            }
-        )
-        self.hostingView?.rootView = cardView
+        self.hostingView?.rootView = makeCardView()
     }
 
     private func setupContentView() {
-        let cardView = ShelfStackCardView(
-            stack: stack,
-            isDragging: isDragging,
-            onDiscard: { [weak self] in
-                ShelfHoverPopoverController.shared.hidePopover(animated: false)
-                self?.onDiscard?()
-            }
-        )
+        let cardView = makeCardView()
         let host = NSHostingView(rootView: cardView)
         host.translatesAutoresizingMaskIntoConstraints = false
         addSubview(host)
@@ -86,6 +71,18 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
         ])
 
         self.hostingView = host
+    }
+
+    private func makeCardView() -> ShelfStackCardView {
+        ShelfStackCardView(
+            stack: stack,
+            isDragging: isDragging,
+            onDiscard: { [weak self] in
+                ShelfHoverPopoverController.shared.hidePopover(animated: false)
+                ShelfQuickLookController.shared.closePreview()
+                self?.onDiscard?()
+            }
+        )
     }
 
     // MARK: - Tracking Area & Hover
@@ -126,6 +123,9 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
     public override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
         ShelfHoverPopoverController.shared.notifyMouseExitedCard()
+        if !ShelfHoverPopoverController.shared.isPopoverVisible {
+            ShelfQuickLookController.shared.stopHoverKeyMonitoring(closePreviewIfOpen: false)
+        }
     }
 
     // MARK: - Mouse & Drag Session
@@ -159,7 +159,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
         guard !validURLs.isEmpty else { return }
 
         ShelfHoverPopoverController.shared.notifyDragStarted()
-        ShelfQuickLookController.shared.stopHoverKeyMonitoring()
+        ShelfQuickLookController.shared.stopHoverKeyMonitoring(closePreviewIfOpen: true)
 
         self.isDraggingSessionActive = true
         onDragStart?()
