@@ -36,6 +36,7 @@ public final class EdgeDwellDetector: @unchecked Sendable {
     ///   - screens: 所有显示器列表
     ///   - edge: 停靠边缘
     ///   - verticalPercent: 垂直停靠比例 (0.0 ~ 1.0)
+    ///   - isFinderDrag: 当前是否为 Finder 文件拖拽（true 时全屏高度均为有效触发区域）
     ///   - isShelfRevealed: 当前 Shelf 是否处于展示状态
     ///   - shelfFrame: 如果已展示，当前 Shelf 窗口的物理 Frame
     /// - Returns: 需要执行的动作（如唤出、缩回或无动作）
@@ -45,6 +46,7 @@ public final class EdgeDwellDetector: @unchecked Sendable {
         screens: [ScreenInfo],
         edge: ShelfEdge,
         verticalPercent: CGFloat = 0.5,
+        isFinderDrag: Bool = false,
         isShelfRevealed: Bool,
         shelfFrame: CGRect? = nil
     ) -> Action {
@@ -59,7 +61,7 @@ public final class EdgeDwellDetector: @unchecked Sendable {
             screen: screen,
             edge: edge,
             verticalPercent: verticalPercent,
-            isFinderDrag: false
+            isFinderDrag: isFinderDrag
         )
         let inShelfWindow = shelfFrame?.contains(point) ?? false
 

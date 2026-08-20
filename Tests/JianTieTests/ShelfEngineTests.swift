@@ -6,6 +6,7 @@ import CoreGraphics
 
 private final class MockDragMonitor: DragMonitoring, @unchecked Sendable {
     var isMonitoring: Bool = false
+    var isDraggingActive: Bool = false
     var onDragStartHandler: (@Sendable ([URL], CGPoint) -> Void)?
     var onDragEndHandler: (@Sendable () -> Void)?
 

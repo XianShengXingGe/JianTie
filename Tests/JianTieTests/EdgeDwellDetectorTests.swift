@@ -308,6 +308,92 @@ final class EdgeDwellDetectorTests: XCTestCase {
         XCTAssertEqual(actionStillInside, .none)
     }
 
+    // MARK: - Finder Drag Full-Edge Tests
+
+    /// 当 isFinderDrag=true 时，鼠标在 Shelf 垂直区域外的边缘也应触发唤出（全屏高度有效）
+    func test_finderDrag_outsideShelfVerticalZone_triggersReveal() {
+        // 屏幕高度 1080，Shelf 默认在中央 verticalPercent=0.5
+        // Shelf 高度 320 → targetY ≈ 25 + (1055-320)*0.5 = 392.5
+        // ±20px zone: [372.5, 732.5]
+        // 选一个明确在 zone 外的点：y=100（底部，远低于 372.5）
+        let bottomEdgeOutsideZone = CGPoint(x: 1.0, y: 100)
+
+        // T=1.0: Finder 拖拽中，鼠标在底部边缘（zone 外）
+        _ = detector.handleMouseMove(
+            point: bottomEdgeOutsideZone,
+            timestamp: 1.0,
+            screens: [testScreen],
+            edge: .left,
+            isFinderDrag: true,
+            isShelfRevealed: false
+        )
+
+        // T=1.15: 停留 150ms，应触发 reveal（因为 Finder drag 全屏高度有效）
+        let action = detector.handleMouseMove(
+            point: bottomEdgeOutsideZone,
+            timestamp: 1.15,
+            screens: [testScreen],
+            edge: .left,
+            isFinderDrag: true,
+            isShelfRevealed: false
+        )
+
+        XCTAssertEqual(action, .reveal(screen: testScreen),
+            "Finder drag 时，边缘任意高度都应触发唤出（全屏高度有效）")
+    }
+
+    /// 当 isFinderDrag=true 时，屏幕顶部边缘也应触发唤出
+    func test_finderDrag_topEdge_outsideShelfVerticalZone_triggersReveal() {
+        let topEdgeOutsideZone = CGPoint(x: 1.0, y: 1000)
+
+        _ = detector.handleMouseMove(
+            point: topEdgeOutsideZone,
+            timestamp: 1.0,
+            screens: [testScreen],
+            edge: .left,
+            isFinderDrag: true,
+            isShelfRevealed: false
+        )
+
+        let action = detector.handleMouseMove(
+            point: topEdgeOutsideZone,
+            timestamp: 1.15,
+            screens: [testScreen],
+            edge: .left,
+            isFinderDrag: true,
+            isShelfRevealed: false
+        )
+
+        XCTAssertEqual(action, .reveal(screen: testScreen),
+            "Finder drag 时，屏幕顶部边缘也应触发唤出")
+    }
+
+    /// 当 isFinderDrag=false（默认）时，zone 外的边缘点不应触发唤出（对照组）
+    func test_normalHover_outsideShelfVerticalZone_doesNotTriggerReveal() {
+        let bottomEdgeOutsideZone = CGPoint(x: 1.0, y: 100)
+
+        _ = detector.handleMouseMove(
+            point: bottomEdgeOutsideZone,
+            timestamp: 1.0,
+            screens: [testScreen],
+            edge: .left,
+            isFinderDrag: false,
+            isShelfRevealed: false
+        )
+
+        let action = detector.handleMouseMove(
+            point: bottomEdgeOutsideZone,
+            timestamp: 1.15,
+            screens: [testScreen],
+            edge: .left,
+            isFinderDrag: false,
+            isShelfRevealed: false
+        )
+
+        XCTAssertEqual(action, .none,
+            "普通悬停时，Shelf 垂直区域外的边缘点不应触发唤出")
+    }
+
     // MARK: - Timer Driven Tests
 
     func test_checkTimer_triggersDwellAndRetract() {

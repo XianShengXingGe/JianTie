@@ -118,10 +118,12 @@ public final class ShelfEngine: ObservableObject {
 
         let capturedShared = self.sharedState
         let capturedScreens = screensProvider
+        let capturedDragMonitor = actualDragMonitor
         let actualEdgeMonitor = edgeMonitor ?? ShelfEdgeMonitor(
             screensProvider: capturedScreens,
             edgeProvider: { capturedShared.edge },
             verticalPercentProvider: { capturedShared.verticalPercent },
+            isFinderDragProvider: { capturedDragMonitor.isDraggingActive },
             isRevealedProvider: { capturedShared.isRevealed }
         )
         self.edgeMonitor = actualEdgeMonitor

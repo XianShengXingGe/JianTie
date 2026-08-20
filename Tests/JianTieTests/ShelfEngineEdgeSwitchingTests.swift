@@ -15,6 +15,7 @@ private final class MockPreferences: PreferencesProviding, @unchecked Sendable {
 
 private final class MockDragMonitor: DragMonitoring, @unchecked Sendable {
     var isMonitoring: Bool = false
+    var isDraggingActive: Bool = false
     func startMonitoring(onDragStart: @escaping @Sendable ([URL], CGPoint) -> Void, onDragEnd: @escaping @Sendable () -> Void) {
         self.isMonitoring = true
     }

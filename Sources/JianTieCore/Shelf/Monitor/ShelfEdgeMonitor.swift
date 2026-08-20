@@ -17,6 +17,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
     private let screensProvider: @Sendable () -> [ScreenInfo]
     private let edgeProvider: @Sendable () -> ShelfEdge
     private let verticalPercentProvider: @Sendable () -> CGFloat
+    private let isFinderDragProvider: @Sendable () -> Bool
     private let isRevealedProvider: @Sendable () -> Bool
     private let shelfFrameProvider: @Sendable () -> CGRect?
 
@@ -29,6 +30,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
         },
         edgeProvider: @escaping @Sendable () -> ShelfEdge = { .left },
         verticalPercentProvider: @escaping @Sendable () -> CGFloat = { 0.5 },
+        isFinderDragProvider: @escaping @Sendable () -> Bool = { false },
         isRevealedProvider: @escaping @Sendable () -> Bool = { false },
         shelfFrameProvider: @escaping @Sendable () -> CGRect? = { nil }
     ) {
@@ -36,6 +38,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
         self.screensProvider = screensProvider
         self.edgeProvider = edgeProvider
         self.verticalPercentProvider = verticalPercentProvider
+        self.isFinderDragProvider = isFinderDragProvider
         self.isRevealedProvider = isRevealedProvider
         self.shelfFrameProvider = shelfFrameProvider
     }
@@ -55,14 +58,14 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
 
         // 1. 监听全局鼠标移动
         self.globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.mouseMoved]
+            matching: [.mouseMoved, .leftMouseDragged]
         ) { [weak self] event in
             self?.processMouseMove(location: NSEvent.mouseLocation, timestamp: event.timestamp)
         }
 
         // 2. 监听本地鼠标移动
         self.localMouseMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.mouseMoved]
+            matching: [.mouseMoved, .leftMouseDragged]
         ) { [weak self] event in
             self?.processMouseMove(location: NSEvent.mouseLocation, timestamp: event.timestamp)
             return event
@@ -107,6 +110,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
         let screens = screensProvider()
         let edge = edgeProvider()
         let verticalPercent = verticalPercentProvider()
+        let isFinderDrag = isFinderDragProvider()
         let isRevealed = isRevealedProvider()
         let shelfFrame = shelfFrameProvider()
 
@@ -116,6 +120,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
             screens: screens,
             edge: edge,
             verticalPercent: verticalPercent,
+            isFinderDrag: isFinderDrag,
             isShelfRevealed: isRevealed,
             shelfFrame: shelfFrame
         )
