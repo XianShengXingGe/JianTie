@@ -154,8 +154,9 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
     public func revealWithAnimation(visibleFrame: CGRect, hiddenFrame: CGRect) {
         guard let window = self.window else { return }
 
-        // 若当前未展示，先定位到屏幕边缘外隐藏位置
+        // 若当前未展示，先定位到屏幕边缘起始隐藏位置并设为透明
         if !window.isVisible {
+            window.alphaValue = 0.0
             window.setFrame(hiddenFrame, display: false)
             window.orderFront(nil)
         }
@@ -165,6 +166,7 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             context.allowsImplicitAnimation = true
             window.animator().setFrame(visibleFrame, display: true)
+            window.animator().alphaValue = 1.0
         }
     }
 
@@ -180,10 +182,12 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
             context.allowsImplicitAnimation = true
             window.animator().setFrame(hiddenFrame, display: true)
+            window.animator().alphaValue = 0.0
         }, completionHandler: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self = self, !self.engine.state.isVisible else { return }
                 self.window?.orderOut(nil)
+                self.window?.alphaValue = 1.0
             }
         })
     }

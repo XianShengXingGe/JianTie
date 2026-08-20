@@ -82,11 +82,11 @@ public struct ShelfGeometryCalculator: Sendable {
         }
     }
 
-    /// 计算 Shelf 窗口的目标可见坐标与屏幕外隐藏坐标
+    /// 计算 Shelf 窗口的目标可见坐标与屏幕边界收回隐藏坐标
     /// - Parameters:
     ///   - screen: 目标屏幕
     ///   - edge: 停靠边缘
-    /// - Returns: (visibleFrame: 滑入后的最终展示位置, hiddenFrame: 滑出屏幕外的初始/隐藏位置)
+    /// - Returns: (visibleFrame: 滑入后的最终展示位置, hiddenFrame: 缩回/滑入起始位置，严格限制在当前屏幕边界内以防多屏溢出)
     public func calculateWindowFrames(
         screen: ScreenInfo,
         edge: ShelfEdge
@@ -97,14 +97,14 @@ public struct ShelfGeometryCalculator: Sendable {
         switch edge {
         case .left:
             let visibleX = visibleBounds.minX + edgeMargin
-            let hiddenX = screen.frame.minX - windowSize.width - 20
+            let hiddenX = max(screen.frame.minX, visibleX - 16)
             let visible = CGRect(x: visibleX, y: targetY, width: windowSize.width, height: windowSize.height)
             let hidden = CGRect(x: hiddenX, y: targetY, width: windowSize.width, height: windowSize.height)
             return (visible, hidden)
 
         case .right:
             let visibleX = visibleBounds.maxX - windowSize.width - edgeMargin
-            let hiddenX = screen.frame.maxX + 20
+            let hiddenX = min(screen.frame.maxX - windowSize.width, visibleX + 16)
             let visible = CGRect(x: visibleX, y: targetY, width: windowSize.width, height: windowSize.height)
             let hidden = CGRect(x: hiddenX, y: targetY, width: windowSize.width, height: windowSize.height)
             return (visible, hidden)
