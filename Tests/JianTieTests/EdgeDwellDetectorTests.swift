@@ -300,6 +300,52 @@ final class EdgeDwellDetectorTests: XCTestCase {
         XCTAssertEqual(actionStillInside, .none)
     }
 
+    func test_autoRetract_whenMouseInsideShelfPanel_neverRetracts() {
+        // Shelf visibleFrame on left edge is roughly x: 8..148, y: 392..712
+        let insidePanelPoint = CGPoint(x: 50, y: 450)
+
+        // T = 2.0s: 鼠标在 Shelf 面板内移动
+        let action1 = detector.handleMouseMove(
+            point: insidePanelPoint,
+            timestamp: 2.0,
+            screens: [testScreen],
+            edge: .left,
+            isShelfRevealed: true
+        )
+        XCTAssertEqual(action1, .none)
+
+        // T = 3.0s (1.0s > 600ms): 鼠标继续停在 Shelf 面板内，绝不缩回
+        let action2 = detector.handleMouseMove(
+            point: insidePanelPoint,
+            timestamp: 3.0,
+            screens: [testScreen],
+            edge: .left,
+            isShelfRevealed: true
+        )
+        XCTAssertEqual(action2, .none)
+
+        // 定时器心跳检查也绝不缩回
+        let timerAction = detector.checkTimer(timestamp: 3.5, isShelfRevealed: true)
+        XCTAssertEqual(timerAction, .none)
+    }
+
+    func test_autoRetract_mouseEnteredShelf_blocksRetractTimer() {
+        detector.handleMouseEnteredShelf()
+
+        // 即使时间过去很久，只要鼠标在 Shelf 内就不缩回
+        let timerAction = detector.checkTimer(timestamp: 10.0, isShelfRevealed: true)
+        XCTAssertEqual(timerAction, .none)
+
+        // 移出后开始计时
+        detector.handleMouseExitedShelf(timestamp: 10.0)
+        let timerAction2 = detector.checkTimer(timestamp: 10.4, isShelfRevealed: true)
+        XCTAssertEqual(timerAction2, .none)
+
+        // 移出满 600ms
+        let timerAction3 = detector.checkTimer(timestamp: 10.65, isShelfRevealed: true)
+        XCTAssertEqual(timerAction3, .retract)
+    }
+
     // MARK: - Finder Drag Full-Edge Tests
 
     /// 当 isFinderDrag=true 时，鼠标在 Shelf 垂直区域外的边缘也应触发唤出（全屏高度有效）

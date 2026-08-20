@@ -17,6 +17,7 @@ public final class EdgeDwellDetector: @unchecked Sendable {
     private var dwellStartTime: TimeInterval?
     private var dwellingScreen: ScreenInfo?
     private var retractStartTime: TimeInterval?
+    private var isMouseInsideShelf: Bool = false
     private var isRevealed: Bool = false
 
     public init(
@@ -55,18 +56,27 @@ public final class EdgeDwellDetector: @unchecked Sendable {
         )
 
         if context.isShelfRevealed {
-            // 处于展示状态：检查是否在边缘判定区内
-            if inEdgeZone {
-                // 鼠标在边缘区域内，取消自动收回计时
+            // 处于展示状态：计算 Shelf 在该屏幕上的可见区域 (带 8px 缓冲容差)
+            let (visibleFrame, _) = geometryCalculator.calculateWindowFrames(
+                screen: screen,
+                edge: context.edge,
+                verticalPercent: context.verticalPercent
+            )
+            let shelfZone = visibleFrame.insetBy(dx: -8.0, dy: -8.0)
+            let inShelfOrEdgeZone = isMouseInsideShelf || inEdgeZone || shelfZone.contains(point)
+
+            if inShelfOrEdgeZone {
+                // 鼠标在 Shelf 面板内或边缘区域内，取消自动收回计时并保持展示
                 retractStartTime = nil
                 return .none
             } else {
-                // 鼠标离开边缘区域
+                // 鼠标离开 Shelf 区域与边缘
                 if retractStartTime == nil {
                     retractStartTime = timestamp
                 } else if timestamp - retractStartTime! >= retractThreshold - precisionEpsilon {
                     retractStartTime = nil
                     isRevealed = false
+                    isMouseInsideShelf = false
                     return .retract
                 }
                 return .none
@@ -120,11 +130,13 @@ public final class EdgeDwellDetector: @unchecked Sendable {
 
     /// 鼠标移入 Shelf 视图区域
     public func handleMouseEnteredShelf() {
+        isMouseInsideShelf = true
         retractStartTime = nil
     }
 
     /// 鼠标移出 Shelf 视图区域
-    public func handleMouseExitedShelf(timestamp: TimeInterval) {
+    public func handleMouseExitedShelf(timestamp: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+        isMouseInsideShelf = false
         if retractStartTime == nil {
             retractStartTime = timestamp
         }
@@ -134,11 +146,17 @@ public final class EdgeDwellDetector: @unchecked Sendable {
     public func checkTimer(timestamp: TimeInterval, isShelfRevealed: Bool) -> Action {
         self.isRevealed = isShelfRevealed
 
-        if isShelfRevealed, let start = retractStartTime {
-            if timestamp - start >= retractThreshold - precisionEpsilon {
+        if isShelfRevealed {
+            if isMouseInsideShelf {
                 retractStartTime = nil
-                self.isRevealed = false
-                return .retract
+                return .none
+            }
+            if let start = retractStartTime {
+                if timestamp - start >= retractThreshold - precisionEpsilon {
+                    retractStartTime = nil
+                    self.isRevealed = false
+                    return .retract
+                }
             }
         }
 
@@ -159,6 +177,7 @@ public final class EdgeDwellDetector: @unchecked Sendable {
         dwellStartTime = nil
         dwellingScreen = nil
         retractStartTime = nil
+        isMouseInsideShelf = false
         isRevealed = false
     }
 }
