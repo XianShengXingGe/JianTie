@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 import CoreGraphics
 import Combine
@@ -338,4 +341,3 @@ public final class ShelfEngine: ObservableObject {
         }
     }
 }
-

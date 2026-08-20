@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// 文件可达性检测协议，用于巡检原文件是否被删除、移动或外接磁盘卸载

@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// Shelf Quick Look 暂存架快速预览协调器，管理预览目标分层切换、空格键 Toggle 与生命周期联动

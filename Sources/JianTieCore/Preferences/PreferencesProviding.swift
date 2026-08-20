@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// 应用偏好设置提供者协议

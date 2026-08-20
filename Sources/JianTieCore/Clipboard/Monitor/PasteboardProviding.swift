@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// 剪贴板读取与变化感知协议

@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import SwiftUI
 import AppKit
 import JianTieCore
@@ -142,4 +145,3 @@ public struct ShelfStackHoverPopoverView: View {
         return ByteCountFormatter.string(fromByteCount: stack.totalSize, countStyle: .file)
     }
 }
-

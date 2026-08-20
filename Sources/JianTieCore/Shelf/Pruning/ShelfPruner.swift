@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// Shelf 暂存项后台静默巡检淘汰器，负责定时排查失效文件引用并移除

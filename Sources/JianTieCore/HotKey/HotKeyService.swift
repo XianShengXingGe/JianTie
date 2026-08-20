@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// 统一热键调度引擎服务：协同 DoubleTapMonitor 与 CarbonHotKeyMonitor

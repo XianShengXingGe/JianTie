@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// 纯状态机：检测 300ms 窗口内的双击修饰键（⌘ / ⌥ / ⌃ / ⇧）事件

@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// Shelf 中单个文件的非破坏性引用模型，通过 Bookmark / URL 指向原始磁盘位置

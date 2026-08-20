@@ -123,4 +123,3 @@ When working on a Mac, handling daily files and copied content often comes with 
 ## 📄 License / 开源协议
 
 本项目采用 [MIT License](LICENSE) 协议开源。
-

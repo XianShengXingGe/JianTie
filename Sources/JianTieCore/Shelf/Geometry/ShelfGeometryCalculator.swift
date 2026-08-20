@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 import CoreGraphics
 import AppKit
@@ -245,4 +248,3 @@ public struct ShelfGeometryCalculator: Sendable {
         return sqrt(dx * dx + dy * dy)
     }
 }
-

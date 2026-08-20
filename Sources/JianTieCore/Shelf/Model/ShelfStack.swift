@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// 单次 Drag 拖入 Shelf 的不可拆分原子单元 (Stack)，包含一个或多个文件引用

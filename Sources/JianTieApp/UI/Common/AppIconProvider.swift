@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import AppKit
 
 /// 应用品牌图标加载器，集中处理 SPM Module 与 App Bundle 资源定位

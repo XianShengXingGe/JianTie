@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import SwiftUI
 import AppKit
 import JianTieCore
@@ -238,4 +241,3 @@ public struct ShelfDraggableStackView: NSViewRepresentable {
         )
     }
 }
-

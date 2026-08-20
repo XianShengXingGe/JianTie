@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Foundation
 
 /// 直接回贴服务：将选定项写入系统剪贴板、恢复目标应用焦点并在 30ms 内合成 ⌘V 完成回贴

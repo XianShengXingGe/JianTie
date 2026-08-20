@@ -1,3 +1,6 @@
+//  JianTie - macOS shelf & clipboard assistant
+//  https://github.com/XianShengXingGe/JianTie
+
 import Cocoa
 
 @main
@@ -11,4 +14,3 @@ final class JianTieApp {
         app.run()
     }
 }
-
