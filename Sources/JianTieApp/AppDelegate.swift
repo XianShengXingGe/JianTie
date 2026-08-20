@@ -36,7 +36,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             },
             isClipboardVisibleHandler: { [weak self] in
-                self?.clipboardWindowController?.window?.isVisible == true
+                MainActor.assumeIsolated {
+                    self?.clipboardWindowController?.window?.isVisible == true
+                }
             },
             presentPreferencesHandler: { [weak self] in
                 Task { @MainActor in
