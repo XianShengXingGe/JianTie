@@ -25,7 +25,8 @@ let package = Package(
         .executableTarget(
             name: "JianTieApp",
             dependencies: ["JianTieCore"],
-            exclude: ["Info.plist"]
+            exclude: ["Info.plist"],
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "JianTieTests",

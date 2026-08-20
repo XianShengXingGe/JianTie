@@ -231,9 +231,7 @@ public final class ShelfEngine: ObservableObject {
     public func handleAirDrop(urls: [URL], sourceStackId: UUID? = nil) {
         guard !urls.isEmpty else { return }
 
-        let targetStackId = sourceStackId ?? activeDraggingStack?.id ?? stacks.first(where: { stack in
-            Set(stack.resolvedURLs) == Set(urls)
-        })?.id
+        let targetStackId = resolveTargetStackId(urls: urls, sourceStackId: sourceStackId)
 
         airDropService.performAirDrop(urls: urls) { [weak self] success in
             guard let self = self else { return }
@@ -260,13 +258,17 @@ public final class ShelfEngine: ObservableObject {
             self?.actionFeedback = nil
         }
 
-        let targetStackId = sourceStackId ?? activeDraggingStack?.id ?? stacks.first(where: { stack in
-            Set(stack.resolvedURLs) == Set(urls)
-        })?.id
+        let targetStackId = resolveTargetStackId(urls: urls, sourceStackId: sourceStackId)
 
         if let targetId = targetStackId {
             self.removeStack(id: targetId)
         }
+    }
+
+    private func resolveTargetStackId(urls: [URL], sourceStackId: UUID?) -> UUID? {
+        sourceStackId ?? activeDraggingStack?.id ?? stacks.first(where: { stack in
+            Set(stack.resolvedURLs) == Set(urls)
+        })?.id
     }
 
     /// 清除内联反馈提示

@@ -14,19 +14,28 @@ public struct PreferencesView: View {
         VStack(spacing: 0) {
             // Header / App Info
             HStack(spacing: 16) {
-                Image(systemName: "paperclip.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 44, height: 44)
-                    .foregroundColor(.accentColor)
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.12))
+                        .frame(width: 48, height: 48)
 
-                VStack(alignment: .leading, spacing: 2) {
+                    Image(systemName: "paperclip.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 44, height: 44)
+                        .foregroundColor(.accentColor)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("简贴")
                             .font(.title2.weight(.bold))
                         Text(viewModel.appVersionText)
-                            .font(.subheadline)
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .liquidGlassBadge(isCapsule: true)
                     }
 
                     Text("轻量、极简的 macOS 文件暂存与剪贴板工具")
@@ -37,16 +46,25 @@ public struct PreferencesView: View {
                 Spacer()
             }
             .padding(.horizontal, 24)
-            .padding(.top, 20)
+            .padding(.top, 22)
             .padding(.bottom, 16)
 
             Divider()
+                .background(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.15), Color.primary.opacity(0.08)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
 
             // Settings Content
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
+                VStack(spacing: 16) {
                     // Section 1: Shelf
-                    GroupBox(label: sectionLabel(title: "暂存架 (Shelf)", icon: "sidebar.squares.left")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        sectionLabel(title: "暂存架 (Shelf)", icon: "sidebar.squares.left")
+
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(alignment: .center, spacing: 16) {
                                 Text("屏幕停靠边缘")
@@ -70,25 +88,28 @@ public struct PreferencesView: View {
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        .padding(8)
+                        .padding(14)
+                        .liquidGlassSection(cornerRadius: 12)
                     }
 
                     // Section 2: Clipboard
-                    GroupBox(label: sectionLabel(title: "剪贴板历史 (Clipboard)", icon: "clock.arrow.circlepath")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        sectionLabel(title: "剪贴板历史 (Clipboard)", icon: "clock.arrow.circlepath")
+
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
                                 Text("全局唤出快捷键")
                                     .font(.body)
                                 Spacer()
                                 Text("双击 ⌘ Command")
-                                    .font(.system(.body, design: .monospaced))
+                                    .font(.system(.subheadline, design: .monospaced))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 3)
-                                    .background(Color.secondary.opacity(0.12))
-                                    .cornerRadius(6)
+                                    .liquidGlassBadge(isCapsule: false, cornerRadius: 5)
                             }
 
                             Divider()
+                                .background(Color.primary.opacity(0.06))
 
                             HStack(alignment: .top) {
                                 Text("历史容量策略")
@@ -104,11 +125,14 @@ public struct PreferencesView: View {
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        .padding(8)
+                        .padding(14)
+                        .liquidGlassSection(cornerRadius: 12)
                     }
 
                     // Section 3: Permissions
-                    GroupBox(label: sectionLabel(title: "系统权限 (Permissions)", icon: "lock.shield")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        sectionLabel(title: "系统权限 (Permissions)", icon: "lock.shield")
+
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(alignment: .center, spacing: 12) {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -122,13 +146,16 @@ public struct PreferencesView: View {
                                 Spacer()
 
                                 if viewModel.isAccessibilityTrusted {
-                                    HStack(spacing: 4) {
+                                    HStack(spacing: 5) {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundColor(.green)
                                         Text("已授权")
-                                            .font(.subheadline.weight(.medium))
+                                            .font(.subheadline.weight(.semibold))
                                             .foregroundColor(.green)
                                     }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .liquidGlassBadge(isCapsule: true, tintColor: .green)
                                 } else {
                                     Button(action: {
                                         viewModel.openAccessibilitySettings()
@@ -144,14 +171,16 @@ public struct PreferencesView: View {
                                 }
                             }
                         }
-                        .padding(8)
+                        .padding(14)
+                        .liquidGlassSection(cornerRadius: 12)
                     }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
             }
         }
-        .frame(width: 480, height: 420)
+        .frame(width: 480, height: 430)
+        .liquidGlassPanel(cornerRadius: 18, material: .hudWindow)
         .onAppear {
             viewModel.refreshAccessibilityStatus()
         }
@@ -162,8 +191,8 @@ public struct PreferencesView: View {
 
     private func sectionLabel(title: String, icon: String) -> some View {
         Label(title, systemImage: icon)
-            .font(.headline)
-            .foregroundColor(.primary)
-            .padding(.bottom, 2)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(.primary.opacity(0.9))
+            .padding(.leading, 2)
     }
 }

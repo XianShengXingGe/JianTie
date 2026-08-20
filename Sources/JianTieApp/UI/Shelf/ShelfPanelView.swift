@@ -24,16 +24,7 @@ public struct ShelfPanelView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 4)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
         .animation(.spring(response: 0.28, dampingFraction: 0.8), value: engine.isActionZoneVisible)
     }
 
@@ -45,19 +36,16 @@ public struct ShelfPanelView: View {
             if case .revealedDragging = engine.state {
                 HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(.accentColor)
+                        .font(.system(size: 12, weight: .semibold))
                     Text("松开以添加新 Stack")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.accentColor)
+                        .font(.system(size: 11, weight: .semibold))
                 }
-                .padding(.vertical, 4)
+                .foregroundColor(.accentColor)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
                 .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.1))
-                )
-                .transition(.opacity)
+                .liquidGlassBadge(isCapsule: true, tintColor: .accentColor)
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
 
             ScrollView(.vertical, showsIndicators: true) {
@@ -96,13 +84,13 @@ public struct ShelfPanelView: View {
         Group {
             if case .revealedDragging = engine.state {
                 // 拖拽文件进入时的放置提示
-                VStack(spacing: 8) {
+                VStack(spacing: 10) {
                     Image(systemName: "arrow.down.doc.fill")
-                        .font(.system(size: 28))
+                        .font(.system(size: 30))
                         .foregroundColor(.accentColor)
 
                     Text("暂存至此")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.primary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -110,11 +98,11 @@ public struct ShelfPanelView: View {
                 // 空 Shelf 悬停唤出时的极简占位
                 VStack(spacing: 8) {
                     Image(systemName: "tray.and.arrow.down")
-                        .font(.system(size: 24))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 26))
+                        .foregroundColor(.secondary.opacity(0.8))
 
                     Text("暂存架为空")
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

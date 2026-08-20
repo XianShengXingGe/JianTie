@@ -16,16 +16,22 @@ public struct AccessibilityGuidanceView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "lock.shield.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 48, height: 48)
-                .foregroundColor(.accentColor)
+        VStack(spacing: 18) {
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.12))
+                    .frame(width: 56, height: 56)
+
+                Image(systemName: "lock.shield.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 36, height: 36)
+                    .foregroundColor(.accentColor)
+            }
 
             VStack(spacing: 8) {
                 Text("简贴 需要辅助功能权限")
-                    .font(.headline)
+                    .font(.headline.weight(.semibold))
 
                 Text("为了支持直接回贴（Direct Paste）将内容快速粘贴到目标应用，简贴需要系统「辅助功能」权限。")
                     .font(.subheadline)
@@ -53,6 +59,7 @@ public struct AccessibilityGuidanceView: View {
         }
         .padding(24)
         .frame(width: 380)
+        .liquidGlassPanel(cornerRadius: 18, material: .hudWindow)
     }
 }
 
@@ -71,6 +78,10 @@ public final class AccessibilityGuidanceWindowController: NSWindowController {
         window.title = "简贴 权限引导"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
+        window.isMovableByWindowBackground = true
         window.isReleasedWhenClosed = false
         window.level = .floating
         window.center()

@@ -26,11 +26,11 @@ public struct ShelfStackCardView: View {
 
                     if stack.count > 1 {
                         Text("\(stack.count)")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
-                            .background(Capsule().fill(Color.accentColor))
+                            .liquidGlassBadge(isCapsule: true, tintColor: .accentColor)
                             .offset(x: 4, y: 4)
                     }
                 }
@@ -52,22 +52,15 @@ public struct ShelfStackCardView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isHovered ? Color.primary.opacity(0.08) : Color.primary.opacity(0.04))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(isHovered ? Color.accentColor.opacity(0.4) : Color.primary.opacity(0.08), lineWidth: 1)
-            )
+            .liquidGlassCard(cornerRadius: 10, isHovered: isHovered)
 
             // 左上角悬停展示的微型 ✕ 丢弃按钮（仅在非拖拽状态下浮现）
             if isHovered && !isDragging {
                 Button(action: onDiscard) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(Color.secondary.opacity(0.9))
-                        .background(Circle().fill(Color(NSColor.windowBackgroundColor)))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color.secondary)
+                        .background(Circle().fill(Color.primary.opacity(0.08)))
                 }
                 .buttonStyle(.plain)
                 .padding(3)

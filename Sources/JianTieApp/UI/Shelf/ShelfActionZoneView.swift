@@ -39,16 +39,17 @@ public struct ShelfActionZoneView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 32)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isAirDropTargeted ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.05))
-        )
+        .liquidGlassCard(cornerRadius: 8, isTargeted: isAirDropTargeted)
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(
-                    isAirDropTargeted ? Color.accentColor : Color.primary.opacity(0.12),
-                    style: StrokeStyle(lineWidth: 1, dash: isAirDropTargeted ? [] : [3, 3])
-                )
+            Group {
+                if !isAirDropTargeted {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(
+                            Color.primary.opacity(0.12),
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 3])
+                        )
+                }
+            }
         )
         .contentShape(Rectangle())
         .onDrop(of: [.fileURL], isTargeted: $isAirDropTargeted) { providers in
@@ -83,22 +84,21 @@ public struct ShelfActionZoneView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 32)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(
-                    engine.actionFeedback != nil
-                        ? Color.green.opacity(0.15)
-                        : (isCopyPathTargeted ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.05))
-                )
+        .liquidGlassCard(
+            cornerRadius: 8,
+            isTargeted: isCopyPathTargeted || engine.actionFeedback != nil,
+            tintColor: engine.actionFeedback != nil ? .green : nil
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(
-                    engine.actionFeedback != nil
-                        ? Color.green.opacity(0.6)
-                        : (isCopyPathTargeted ? Color.accentColor : Color.primary.opacity(0.12)),
-                    style: StrokeStyle(lineWidth: 1, dash: (isCopyPathTargeted || engine.actionFeedback != nil) ? [] : [3, 3])
-                )
+            Group {
+                if !isCopyPathTargeted && engine.actionFeedback == nil {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(
+                            Color.primary.opacity(0.12),
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 3])
+                        )
+                }
+            }
         )
         .contentShape(Rectangle())
         .onDrop(of: [.fileURL], isTargeted: $isCopyPathTargeted) { providers in

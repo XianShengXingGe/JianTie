@@ -30,14 +30,7 @@ public struct ClipboardItemCardView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(cardBackgroundColor)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(cardBorderColor, lineWidth: isSelected ? 1.5 : 0.8)
-        )
+        .liquidGlassCard(cornerRadius: 10, isSelected: isSelected, isHovered: isHovered)
         .contentShape(Rectangle())
         .onTapGesture {
             onSelect()
@@ -53,7 +46,7 @@ public struct ClipboardItemCardView: View {
     private var headerView: some View {
         HStack(spacing: 6) {
             itemTypeIcon
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(isSelected ? .accentColor : .secondary)
 
             Text(timeAgoFormatted(item.timestamp))
@@ -67,7 +60,7 @@ public struct ClipboardItemCardView: View {
             if isHovered {
                 Button(action: onDelete) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 9, weight: .bold))
                         .foregroundColor(.secondary)
                         .padding(4)
                         .background(Circle().fill(Color.primary.opacity(0.1)))
@@ -114,14 +107,11 @@ public struct ClipboardItemCardView: View {
 
     private func badgeText(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 9, weight: .medium))
+            .font(.system(size: 9, weight: .medium, design: .rounded))
             .foregroundColor(.secondary)
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 5)
             .padding(.vertical, 1.5)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.primary.opacity(0.06))
-            )
+            .liquidGlassBadge(isCapsule: true)
     }
 
     // MARK: - Content
@@ -148,40 +138,23 @@ public struct ClipboardItemCardView: View {
                         .cornerRadius(6)
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.3), Color.primary.opacity(0.08)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
                         )
                     Spacer()
                 }
                 .padding(.vertical, 4)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.primary.opacity(0.02))
-                )
             } else {
                 Text("无法解析的图片数据")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-        }
-    }
-
-    // MARK: - Styling Helpers
-
-    private var cardBackgroundColor: Color {
-        if isSelected {
-            return Color.accentColor.opacity(0.14)
-        } else if isHovered {
-            return Color.primary.opacity(0.05)
-        } else {
-            return Color.primary.opacity(0.02)
-        }
-    }
-
-    private var cardBorderColor: Color {
-        if isSelected {
-            return Color.accentColor.opacity(0.5)
-        } else {
-            return Color.primary.opacity(0.08)
         }
     }
 

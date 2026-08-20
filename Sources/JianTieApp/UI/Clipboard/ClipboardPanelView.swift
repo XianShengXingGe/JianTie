@@ -24,15 +24,18 @@ public struct ClipboardPanelView: View {
                 .padding(.vertical, 12)
 
             Divider()
-                .background(Color.primary.opacity(0.1))
+                .background(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.15), Color.primary.opacity(0.08)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
 
             listContentView
         }
         .frame(width: 580, height: 440)
-        .background(
-            VisualEffectBackground(material: .hudWindow, blendingMode: .behindWindow)
-        )
-        .cornerRadius(12)
+        .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
         .onAppear {
             isSearchFocused = true
         }
@@ -68,18 +71,18 @@ public struct ClipboardPanelView: View {
                 keyBadge("↵ 回贴")
             }
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .liquidGlassInput(cornerRadius: 10)
     }
 
     private func keyBadge(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .medium, design: .rounded))
             .foregroundColor(.secondary)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.primary.opacity(0.06))
-            )
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2.5)
+            .liquidGlassBadge(isCapsule: false, cornerRadius: 5)
     }
 
     // MARK: - List Content
@@ -133,32 +136,5 @@ public struct ClipboardPanelView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-/// macOS 毛玻璃材质背景辅助视图
-public struct VisualEffectBackground: NSViewRepresentable {
-    public let material: NSVisualEffectView.Material
-    public let blendingMode: NSVisualEffectView.BlendingMode
-
-    public init(
-        material: NSVisualEffectView.Material = .hudWindow,
-        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow
-    ) {
-        self.material = material
-        self.blendingMode = blendingMode
-    }
-
-    public func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        return view
-    }
-
-    public func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
     }
 }
