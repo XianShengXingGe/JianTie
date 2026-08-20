@@ -123,14 +123,8 @@ public final class AppCoordinator: NSObject {
             if let button = item.button {
                 button.image = StatusBarIcon.createTemplateImage()
             }
-            item.menu = menuBuilder.buildMenu(
-                target: self,
-                aboutAction: #selector(showAbout),
-                preferencesAction: #selector(openPreferences),
-                quitAction: #selector(quit),
-                localizationManager: localizationManager
-            )
             self.statusItem = item
+            refreshStatusMenu()
 
             NotificationCenter.default.publisher(for: .appLanguageDidChange)
                 .sink { [weak self] _ in

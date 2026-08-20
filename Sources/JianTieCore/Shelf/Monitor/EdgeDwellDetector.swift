@@ -33,46 +33,35 @@ public final class EdgeDwellDetector: @unchecked Sendable {
     /// - Parameters:
     ///   - point: 当前鼠标坐标
     ///   - timestamp: 当前时间戳（秒）
-    ///   - screens: 所有显示器列表
-    ///   - edge: 停靠边缘
-    ///   - verticalPercent: 垂直停靠比例 (0.0 ~ 1.0)
-    ///   - isFinderDrag: 当前是否为 Finder 文件拖拽（true 时全屏高度均为有效触发区域）
-    ///   - isShelfRevealed: 当前 Shelf 是否处于展示状态
-    ///   - shelfFrame: 如果已展示，当前 Shelf 窗口的物理 Frame
+    ///   - context: 包含显示器列表、停靠边缘、垂直比例与展示状态的上下文
     /// - Returns: 需要执行的动作（如唤出、缩回或无动作）
     public func handleMouseMove(
         point: CGPoint,
         timestamp: TimeInterval,
-        screens: [ScreenInfo],
-        edge: ShelfEdge,
-        verticalPercent: CGFloat = 0.5,
-        isFinderDrag: Bool = false,
-        isShelfRevealed: Bool,
-        shelfFrame: CGRect? = nil
+        context: EdgeDwellContext
     ) -> Action {
-        self.isRevealed = isShelfRevealed
+        self.isRevealed = context.isShelfRevealed
 
-        guard let screen = geometryCalculator.findScreen(for: point, in: screens) else {
+        guard let screen = geometryCalculator.findScreen(for: point, in: context.screens) else {
             return .none
         }
 
         let inEdgeZone = geometryCalculator.isPointInEdgeTriggerZone(
             point: point,
             screen: screen,
-            edge: edge,
-            verticalPercent: verticalPercent,
-            isFinderDrag: isFinderDrag
+            edge: context.edge,
+            verticalPercent: context.verticalPercent,
+            isFinderDrag: context.isFinderDrag
         )
-        let inShelfWindow = shelfFrame?.contains(point) ?? false
 
-        if isShelfRevealed {
-            // 处于展示状态：检查是否在 Shelf 窗口或边缘内
-            if inShelfWindow || inEdgeZone {
-                // 鼠标在 Shelf 区域内，取消自动收回计时
+        if context.isShelfRevealed {
+            // 处于展示状态：检查是否在边缘判定区内
+            if inEdgeZone {
+                // 鼠标在边缘区域内，取消自动收回计时
                 retractStartTime = nil
                 return .none
             } else {
-                // 鼠标离开 Shelf 区域
+                // 鼠标离开边缘区域
                 if retractStartTime == nil {
                     retractStartTime = timestamp
                 } else if timestamp - retractStartTime! >= retractThreshold - precisionEpsilon {
@@ -106,6 +95,27 @@ public final class EdgeDwellDetector: @unchecked Sendable {
                 return .none
             }
         }
+    }
+
+    /// 便捷重载：将离散参数包装为 EdgeDwellContext 执行判定
+    @discardableResult
+    public func handleMouseMove(
+        point: CGPoint,
+        timestamp: TimeInterval,
+        screens: [ScreenInfo] = ScreenInfo.currentScreens(),
+        edge: ShelfEdge = .left,
+        verticalPercent: CGFloat = 0.5,
+        isFinderDrag: Bool = false,
+        isShelfRevealed: Bool = false
+    ) -> Action {
+        let context = EdgeDwellContext(
+            screens: screens,
+            edge: edge,
+            verticalPercent: verticalPercent,
+            isFinderDrag: isFinderDrag,
+            isShelfRevealed: isShelfRevealed
+        )
+        return handleMouseMove(point: point, timestamp: timestamp, context: context)
     }
 
     /// 鼠标移入 Shelf 视图区域

@@ -231,8 +231,8 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         }
 
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.28
-            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.175, 0.885, 0.32, 1.15)
+            context.duration = 0.18 // 180ms ease-out
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             context.allowsImplicitAnimation = true
             window.animator().setFrame(visibleFrame, display: true)
             window.animator().alphaValue = 1.0

@@ -233,7 +233,6 @@ final class EdgeDwellDetectorTests: XCTestCase {
     // MARK: - 600ms Auto-Retract Tests
 
     func test_autoRetract_whenMouseLeavesShelf_triggersAfter600ms() {
-        let shelfFrame = CGRect(x: 8, y: 380, width: 140, height: 320)
         let outsidePoint = CGPoint(x: 500, y: 500)
 
         // T = 2.0s: 鼠标离开 Shelf 区域
@@ -242,8 +241,7 @@ final class EdgeDwellDetectorTests: XCTestCase {
             timestamp: 2.0,
             screens: [testScreen],
             edge: .left,
-            isShelfRevealed: true,
-            shelfFrame: shelfFrame
+            isShelfRevealed: true
         )
         XCTAssertEqual(action1, .none)
 
@@ -253,8 +251,7 @@ final class EdgeDwellDetectorTests: XCTestCase {
             timestamp: 2.40,
             screens: [testScreen],
             edge: .left,
-            isShelfRevealed: true,
-            shelfFrame: shelfFrame
+            isShelfRevealed: true
         )
         XCTAssertEqual(action2, .none)
 
@@ -264,16 +261,14 @@ final class EdgeDwellDetectorTests: XCTestCase {
             timestamp: 2.60,
             screens: [testScreen],
             edge: .left,
-            isShelfRevealed: true,
-            shelfFrame: shelfFrame
+            isShelfRevealed: true
         )
         XCTAssertEqual(action3, .retract)
     }
 
     func test_autoRetract_reenteringShelf_resetsRetractTimer() {
-        let shelfFrame = CGRect(x: 8, y: 380, width: 140, height: 320)
         let outsidePoint = CGPoint(x: 500, y: 500)
-        let insidePoint = CGPoint(x: 50, y: 450)
+        let inEdgeZonePoint = CGPoint(x: 1.0, y: 500)
 
         // T = 2.0s: 移出 Shelf
         _ = detector.handleMouseMove(
@@ -281,29 +276,26 @@ final class EdgeDwellDetectorTests: XCTestCase {
             timestamp: 2.0,
             screens: [testScreen],
             edge: .left,
-            isShelfRevealed: true,
-            shelfFrame: shelfFrame
+            isShelfRevealed: true
         )
 
-        // T = 2.40s (400ms): 重新移入 Shelf
+        // T = 2.40s (400ms): 重新移入 Shelf 判定区
         let actionInside = detector.handleMouseMove(
-            point: insidePoint,
+            point: inEdgeZonePoint,
             timestamp: 2.40,
             screens: [testScreen],
             edge: .left,
-            isShelfRevealed: true,
-            shelfFrame: shelfFrame
+            isShelfRevealed: true
         )
         XCTAssertEqual(actionInside, .none)
 
         // T = 2.70s: 距离第一次移出已 700ms，但在 Shelf 内不缩回
         let actionStillInside = detector.handleMouseMove(
-            point: insidePoint,
+            point: inEdgeZonePoint,
             timestamp: 2.70,
             screens: [testScreen],
             edge: .left,
-            isShelfRevealed: true,
-            shelfFrame: shelfFrame
+            isShelfRevealed: true
         )
         XCTAssertEqual(actionStillInside, .none)
     }

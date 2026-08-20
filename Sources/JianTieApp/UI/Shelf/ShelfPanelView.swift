@@ -54,22 +54,6 @@ public struct ShelfPanelView: View {
         )
         .animation(.spring(response: 0.28, dampingFraction: 0.8), value: engine.isActionZoneVisible)
         .animation(.spring(response: 0.22, dampingFraction: 0.8), value: engine.isPanelDragging)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 4, coordinateSpace: .global)
-                .onChanged { _ in
-                    if !engine.isPanelDragging && !engine.isStackDragging {
-                        onPanelDragStart?()
-                    }
-                    if engine.isPanelDragging {
-                        onPanelDragMove?()
-                    }
-                }
-                .onEnded { _ in
-                    if engine.isPanelDragging {
-                        onPanelDragEnd?()
-                    }
-                }
-        )
     }
 
     // MARK: - Multi Stack Content

@@ -19,7 +19,6 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
     private let verticalPercentProvider: @Sendable () -> CGFloat
     private let isFinderDragProvider: @Sendable () -> Bool
     private let isRevealedProvider: @Sendable () -> Bool
-    private let shelfFrameProvider: @Sendable () -> CGRect?
 
     private let lock = NSLock()
 
@@ -31,8 +30,7 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
         edgeProvider: @escaping @Sendable () -> ShelfEdge = { .left },
         verticalPercentProvider: @escaping @Sendable () -> CGFloat = { 0.5 },
         isFinderDragProvider: @escaping @Sendable () -> Bool = { false },
-        isRevealedProvider: @escaping @Sendable () -> Bool = { false },
-        shelfFrameProvider: @escaping @Sendable () -> CGRect? = { nil }
+        isRevealedProvider: @escaping @Sendable () -> Bool = { false }
     ) {
         self.detector = detector
         self.screensProvider = screensProvider
@@ -40,7 +38,6 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
         self.verticalPercentProvider = verticalPercentProvider
         self.isFinderDragProvider = isFinderDragProvider
         self.isRevealedProvider = isRevealedProvider
-        self.shelfFrameProvider = shelfFrameProvider
     }
 
     public func startMonitoring(
@@ -107,22 +104,18 @@ public final class ShelfEdgeMonitor: @unchecked Sendable {
 
     /// 处理鼠标移动事件
     public func processMouseMove(location: CGPoint, timestamp: TimeInterval) {
-        let screens = screensProvider()
-        let edge = edgeProvider()
-        let verticalPercent = verticalPercentProvider()
-        let isFinderDrag = isFinderDragProvider()
-        let isRevealed = isRevealedProvider()
-        let shelfFrame = shelfFrameProvider()
+        let context = EdgeDwellContext(
+            screens: screensProvider(),
+            edge: edgeProvider(),
+            verticalPercent: verticalPercentProvider(),
+            isFinderDrag: isFinderDragProvider(),
+            isShelfRevealed: isRevealedProvider()
+        )
 
         let action = detector.handleMouseMove(
             point: location,
             timestamp: timestamp,
-            screens: screens,
-            edge: edge,
-            verticalPercent: verticalPercent,
-            isFinderDrag: isFinderDrag,
-            isShelfRevealed: isRevealed,
-            shelfFrame: shelfFrame
+            context: context
         )
 
         dispatchAction(action)
