@@ -9,6 +9,7 @@ DerivedData/
 *.app
 *.dmg
 *.zip
+dist/
 * 2.*
 docs/
 Tests/
