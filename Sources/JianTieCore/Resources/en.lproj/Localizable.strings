@@ -73,6 +73,7 @@
 "clipboard.search_placeholder" = "Search clipboard history...";
 "clipboard.shortcut_esc" = "ESC Exit";
 "clipboard.shortcut_navigate" = "↑↓ Navigate";
+"clipboard.shortcut_quick_paste" = "⌘1-9 Paste";
 "clipboard.shortcut_paste" = "↵ Paste";
 "clipboard.empty_state" = "No clipboard history yet";
 "clipboard.search_no_results" = "No matches found for \"%@\"";

@@ -68,6 +68,7 @@ public struct ClipboardPanelView: View {
             HStack(spacing: 6) {
                 keyBadge(L10n.tr("clipboard.shortcut_esc"))
                 keyBadge(L10n.tr("clipboard.shortcut_navigate"))
+                keyBadge(L10n.tr("clipboard.shortcut_quick_paste"))
                 keyBadge(L10n.tr("clipboard.shortcut_paste"))
             }
         }
@@ -98,6 +99,7 @@ public struct ClipboardPanelView: View {
                             ClipboardItemCardView(
                                 item: item,
                                 isSelected: index == viewModel.selectedIndex,
+                                shortcutHint: ClipboardViewModel.shortcutHint(for: index),
                                 onSelect: {
                                     onSelectAndPaste(item)
                                 },

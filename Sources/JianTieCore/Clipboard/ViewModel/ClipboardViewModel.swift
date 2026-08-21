@@ -76,11 +76,35 @@ public final class ClipboardViewModel: ObservableObject {
         selectedIndex = max(0, selectedIndex - 1)
     }
 
+    /// 快捷直贴支持的最大条目数量 (1~9)
+    public static let maxQuickPasteCount: Int = 9
+
+    /// 获取指定索引位置对应的快捷键提示文案
+    public static func shortcutHint(for index: Int) -> String? {
+        guard index >= 0 && index < maxQuickPasteCount else { return nil }
+        return "⌘ \(index + 1)"
+    }
+
+    /// 获取过滤列表中指定索引的条目
+    public func item(at index: Int) -> ClipboardItem? {
+        let currentFiltered = filteredItems
+        guard currentFiltered.indices.contains(index) else { return nil }
+        return currentFiltered[index]
+    }
+
     /// 设置指定索引为选中项
     public func selectItem(at index: Int) {
         let count = filteredItems.count
         guard count > 0, (0..<count).contains(index) else { return }
         selectedIndex = index
+    }
+
+    /// 选中指定索引项并返回以供 Direct Paste
+    @discardableResult
+    public func selectAndConfirmItem(at index: Int) -> ClipboardItem? {
+        guard let target = item(at: index) else { return nil }
+        selectedIndex = index
+        return target
     }
 
     /// 确认当前选中项并返回以供 Direct Paste

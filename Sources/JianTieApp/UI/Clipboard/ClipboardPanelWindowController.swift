@@ -11,6 +11,7 @@ public final class ClipboardPanelWindow: NSPanel {
     public var onEnter: (() -> Void)?
     public var onUpArrow: (() -> Void)?
     public var onDownArrow: (() -> Void)?
+    public var onQuickPasteIndex: ((Int) -> Void)?
 
     public override var canBecomeKey: Bool {
         return true
@@ -39,6 +40,12 @@ public final class ClipboardPanelWindow: NSPanel {
                 return
             }
 
+            // 拦截 ⌘ 1 ~ ⌘ 9 快速直贴
+            if let index = quickPasteIndex(for: event) {
+                onQuickPasteIndex?(index)
+                return
+            }
+
             switch event.keyCode {
             case 53: // ESC
                 onEscape?()
@@ -57,6 +64,24 @@ public final class ClipboardPanelWindow: NSPanel {
             }
         }
         super.sendEvent(event)
+    }
+
+    private func quickPasteIndex(for event: NSEvent) -> Int? {
+        let relevantModifiers: NSEvent.ModifierFlags = [.command, .shift, .control, .option]
+        let flags = event.modifierFlags.intersection(relevantModifiers)
+        // 严格仅匹配 ⌘ 修饰键，防止与系统截图快捷键 (⌘⇧3 / ⌘⇧4 / ⌘⇧5) 或其他组合键冲突
+        guard flags == .command else {
+            return nil
+        }
+
+        if let chars = event.charactersIgnoringModifiers,
+           let firstChar = chars.first,
+           let digit = Int(String(firstChar)),
+           digit >= 1 && digit <= ClipboardViewModel.maxQuickPasteCount {
+            return digit - 1
+        }
+
+        return nil
     }
 }
 
@@ -114,6 +139,12 @@ public final class ClipboardPanelWindowController: NSWindowController, NSWindowD
 
         window.onDownArrow = { [weak self] in
             self?.viewModel.moveSelectionDown()
+        }
+
+        window.onQuickPasteIndex = { [weak self] index in
+            guard let self = self,
+                  let targetItem = self.viewModel.selectAndConfirmItem(at: index) else { return }
+            self.pasteItemAndClose(targetItem)
         }
     }
 

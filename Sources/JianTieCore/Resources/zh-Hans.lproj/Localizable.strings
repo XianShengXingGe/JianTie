@@ -73,6 +73,7 @@
 "clipboard.search_placeholder" = "搜索剪贴板历史...";
 "clipboard.shortcut_esc" = "ESC 退出";
 "clipboard.shortcut_navigate" = "↑↓ 切换";
+"clipboard.shortcut_quick_paste" = "⌘1-9 直贴";
 "clipboard.shortcut_paste" = "↵ 回贴";
 "clipboard.empty_state" = "暂无剪贴板历史记录";
 "clipboard.search_no_results" = "未找到匹配 \"%@\" 的内容";

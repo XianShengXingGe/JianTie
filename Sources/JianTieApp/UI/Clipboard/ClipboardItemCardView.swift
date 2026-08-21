@@ -10,6 +10,7 @@ public struct ClipboardItemCardView: View {
     @ObservedObject private var l10n = LocalizationManager.shared
     public let item: ClipboardItem
     public let isSelected: Bool
+    public let shortcutHint: String?
     public let onSelect: () -> Void
     public let onDelete: () -> Void
 
@@ -18,20 +19,34 @@ public struct ClipboardItemCardView: View {
     public init(
         item: ClipboardItem,
         isSelected: Bool,
+        shortcutHint: String? = nil,
         onSelect: @escaping () -> Void,
         onDelete: @escaping () -> Void
     ) {
         self.item = item
         self.isSelected = isSelected
+        self.shortcutHint = shortcutHint
         self.onSelect = onSelect
         self.onDelete = onDelete
     }
 
     public var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(alignment: .leading, spacing: 8) {
-                headerView
-                contentView
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    headerView
+                    contentView
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let shortcutHint = shortcutHint {
+                    Text(shortcutHint)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundColor(isSelected ? .accentColor : .secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .liquidGlassBadge(isCapsule: false, cornerRadius: 5)
+                }
             }
             .padding(10)
             .padding(.trailing, 20)
