@@ -43,7 +43,7 @@ public struct ShelfPanelView: View {
         .gesture(
             DragGesture(minimumDistance: 6, coordinateSpace: .global)
                 .onChanged { _ in
-                    guard !engine.isStackDragging && !engine.state.isDragging else { return }
+                    guard !engine.isStackDragging && !engine.state.isDragging && !engine.isActionZoneVisible else { return }
                     if !engine.isPanelDragging {
                         onPanelDragStart?()
                     }

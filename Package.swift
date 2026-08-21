@@ -29,6 +29,10 @@ let package = Package(
             dependencies: ["JianTieCore"],
             exclude: ["Info.plist"],
             resources: [.process("Resources")]
+        ),
+        .testTarget(
+            name: "JianTieCoreTests",
+            dependencies: ["JianTieCore"]
         )
     ]
 )

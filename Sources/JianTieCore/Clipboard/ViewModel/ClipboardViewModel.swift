@@ -14,6 +14,7 @@ public final class ClipboardViewModel: ObservableObject {
         }
     }
     @Published public private(set) var selectedIndex: Int = 0
+    @Published public private(set) var presentationCount: Int = 0
 
     public let engine: ClipboardEngine
     private var cancellables = Set<AnyCancellable>()
@@ -97,6 +98,7 @@ public final class ClipboardViewModel: ObservableObject {
     public func resetForPresentation() {
         self.searchText = ""
         self.selectedIndex = 0
+        self.presentationCount += 1
     }
 
     private func handleSearchTextChange() {

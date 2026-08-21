@@ -20,8 +20,25 @@ public final class ClipboardPanelWindow: NSPanel {
         return true
     }
 
+    /// 检查当前 First Responder 是否处于输入法（IME）拼音/文本组合态（Marked Text）
+    private var isComposingMarkedText: Bool {
+        if let textView = firstResponder as? NSTextView {
+            return textView.hasMarkedText()
+        }
+        if let textInput = firstResponder as? NSTextInputClient {
+            return textInput.hasMarkedText()
+        }
+        return false
+    }
+
     public override func sendEvent(_ event: NSEvent) {
         if event.type == .keyDown {
+            // 当输入法正在输入拼音/候选词时，绝对不拦截任何按键，放行给 IME 处理
+            if isComposingMarkedText {
+                super.sendEvent(event)
+                return
+            }
+
             switch event.keyCode {
             case 53: // ESC
                 onEscape?()
@@ -59,7 +76,7 @@ public final class ClipboardPanelWindowController: NSWindowController, NSWindowD
 
         let window = ClipboardPanelWindow(
             contentRect: NSRect(x: 0, y: 0, width: 580, height: 440),
-            styleMask: [.borderless, .nonactivatingPanel],
+            styleMask: [.borderless],
             backing: .buffered,
             defer: false
         )
@@ -68,7 +85,7 @@ public final class ClipboardPanelWindowController: NSWindowController, NSWindowD
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = true
-        window.isMovableByWindowBackground = true
+        window.isMovableByWindowBackground = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         super.init(window: window)

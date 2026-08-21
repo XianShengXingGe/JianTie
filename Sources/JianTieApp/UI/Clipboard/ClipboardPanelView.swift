@@ -36,6 +36,9 @@ public struct ClipboardPanelView: View {
         .onAppear {
             isSearchFocused = true
         }
+        .onChange(of: viewModel.presentationCount) { _ in
+            isSearchFocused = true
+        }
     }
 
     // MARK: - Search Header

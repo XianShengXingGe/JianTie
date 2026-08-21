@@ -9,13 +9,19 @@ import JianTieCore
 public struct ShelfStackCardView: View {
     @ObservedObject private var l10n = LocalizationManager.shared
     public let stack: ShelfStack
+    public let isHovered: Bool
     public let isDragging: Bool
     public let onDiscard: () -> Void
 
-    @State private var isHovered: Bool = false
+    @State private var fallbackHovered: Bool = false
 
-    public init(stack: ShelfStack, isDragging: Bool = false, onDiscard: @escaping () -> Void) {
+    private var effectiveHovered: Bool {
+        isHovered || fallbackHovered
+    }
+
+    public init(stack: ShelfStack, isHovered: Bool = false, isDragging: Bool = false, onDiscard: @escaping () -> Void) {
         self.stack = stack
+        self.isHovered = isHovered
         self.isDragging = isDragging
         self.onDiscard = onDiscard
     }
@@ -56,10 +62,10 @@ public struct ShelfStackCardView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .liquidGlassCard(cornerRadius: 10, isHovered: isHovered)
+            .liquidGlassCard(cornerRadius: 10, isHovered: effectiveHovered)
 
             // 左上角悬停展示的微型 ✕ 丢弃按钮（仅在非拖拽状态下浮现）
-            if isHovered && !isDragging {
+            if effectiveHovered && !isDragging {
                 Button(action: onDiscard) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 12, weight: .semibold))
@@ -74,7 +80,7 @@ public struct ShelfStackCardView: View {
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
-                self.isHovered = hovering
+                self.fallbackHovered = hovering
             }
         }
     }
