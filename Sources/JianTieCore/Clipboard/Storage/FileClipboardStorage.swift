@@ -2,6 +2,7 @@
 //  https://github.com/XianShengXingGe/JianTie
 
 import Foundation
+import CryptoKit
 
 /// 基于本地文件系统的剪贴板持久化存储
 public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked Sendable {
@@ -10,6 +11,7 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
 
     private let fileManager = FileManager.default
     private let lock = NSRecursiveLock()
+    private let ioQueue = DispatchQueue(label: "com.jiantie.clipboard.storage.io", qos: .utility)
     private let jsonEncoder = JSONEncoder()
     private let jsonDecoder = JSONDecoder()
 
@@ -146,6 +148,9 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
 
         var currentItems = try load()
 
+        // 智能去重：若历史中已存在相同内容（文本纯文本一致 / 图片哈希一致），先移除旧项，只保留最新一次
+        currentItems.removeAll { $0.isContentEqual(to: item) }
+
         // 真实时间流记录：最新记录插入头部 (index 0)
         currentItems.insert(item, at: 0)
 
@@ -192,10 +197,135 @@ public final class FileClipboardStorage: ClipboardStorageProviding, @unchecked S
         ensureDirectoryStructure()
     }
 
+    // MARK: - Async Non-Blocking Operations
+
+    public func loadAsync() async throws -> [ClipboardItem] {
+        try await withCheckedThrowingContinuation { continuation in
+            ioQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                do {
+                    let result = try self.load()
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    public func saveAsync(items: [ClipboardItem]) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            ioQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume()
+                    return
+                }
+                do {
+                    try self.save(items: items)
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    @discardableResult
+    public func appendAsync(item: ClipboardItem) async throws -> [ClipboardItem] {
+        try await withCheckedThrowingContinuation { continuation in
+            ioQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                do {
+                    let result = try self.append(item: item)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    @discardableResult
+    public func deleteAsync(id: UUID) async throws -> [ClipboardItem] {
+        try await withCheckedThrowingContinuation { continuation in
+            ioQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                do {
+                    let result = try self.delete(id: id)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    @discardableResult
+    public func pruneAsync(now: Date = Date()) async throws -> [ClipboardItem] {
+        try await withCheckedThrowingContinuation { continuation in
+            ioQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                do {
+                    let result = try self.prune(now: now)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    public func clearAsync() async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            ioQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume()
+                    return
+                }
+                do {
+                    try self.clear()
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
     // MARK: - Private Helpers
 
     private func pruneItems(_ items: [ClipboardItem], now: Date) -> [ClipboardItem] {
-        var result = items
+        var result: [ClipboardItem] = []
+        var seenSignatures = Set<String>()
+
+        // 0. 全局去重（保留时间最新的唯一项）
+        for item in items {
+            let signature: String
+            switch item.content {
+            case .text(let text):
+                signature = "text:\(text.plainText)"
+            case .image(let image):
+                let hash = SHA256.hash(data: image.imageData)
+                signature = "image:\(hash.description)"
+            }
+
+            if !seenSignatures.contains(signature) {
+                seenSignatures.insert(signature)
+                result.append(item)
+            }
+        }
 
         // 1. 保存周期过期修剪 (Retention Period)
         if let days = preferences.clipboardRetentionPeriod.days {

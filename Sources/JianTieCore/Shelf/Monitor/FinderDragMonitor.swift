@@ -155,13 +155,19 @@ public final class FinderDragMonitor: DragMonitoring, @unchecked Sendable {
         // 释放鼠标时同步更新 changeCount 记录，避免后续普通的无文件点击触发历史残留数据
         lastObservedChangeCount = changeCountReader()
 
-        guard isDraggingActive else { return }
-
         isDraggingActive = false
         let endCallback = dragEndHandler
         DispatchQueue.main.async {
             endCallback?()
         }
+    }
+
+    /// 显式重置并同步拖拽状态
+    public func resetDraggingState() {
+        lock.lock()
+        defer { lock.unlock() }
+        self.isDraggingActive = false
+        self.lastObservedChangeCount = changeCountReader()
     }
 
     deinit {

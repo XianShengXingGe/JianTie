@@ -22,18 +22,33 @@ public final class ShelfHoverPopoverController: NSObject, ObservableObject {
 
     private var popoverWindow: ShelfHoverPopoverPanel?
     private let geometryCalculator = ShelfGeometryCalculator()
+    private var lastCardScreenFrame: CGRect?
+    private var lastShelfWindowFrame: CGRect?
 
     public init(coordinator: ShelfHoverPopoverCoordinator? = nil) {
         let actualCoordinator = coordinator ?? ShelfHoverPopoverCoordinator.shared
         self.coordinator = actualCoordinator
         super.init()
 
-        actualCoordinator.onShowPopover = { [weak self] stack, cardScreenFrame, screen, edge in
-            self?.showPopover(for: stack, cardScreenFrame: cardScreenFrame, screen: screen, edge: edge)
+        actualCoordinator.onShowPopover = { [weak self] stack, cardScreenFrame, shelfWindowFrame, screen, edge in
+            self?.showPopover(
+                for: stack,
+                cardScreenFrame: cardScreenFrame,
+                shelfWindowFrame: shelfWindowFrame,
+                screen: screen,
+                edge: edge
+            )
         }
 
         actualCoordinator.onHidePopover = { [weak self] animated in
             self?.performWindowHide(animated: animated)
+        }
+
+        actualCoordinator.isMousePhysicallyInside = { [weak self] in
+            guard let self = self else { return false }
+            guard self.coordinator.isShelfVisibleProvider?() != false else { return false }
+            let mousePos = NSEvent.mouseLocation
+            return self.coordinator.isInsideSafeZone(point: mousePos)
         }
     }
 
@@ -42,40 +57,54 @@ public final class ShelfHoverPopoverController: NSObject, ObservableObject {
     public func notifyMouseEnteredCard(
         stack: ShelfStack,
         cardScreenFrame: CGRect,
+        shelfWindowFrame: CGRect? = nil,
         screen: ScreenInfo,
         edge: ShelfEdge,
-        delay: TimeInterval = 0.150
+        delay: TimeInterval = 0.300
     ) {
+        self.lastCardScreenFrame = cardScreenFrame
+        self.lastShelfWindowFrame = shelfWindowFrame
         coordinator.notifyMouseEnteredCard(
             stack: stack,
             cardScreenFrame: cardScreenFrame,
+            shelfWindowFrame: shelfWindowFrame,
             screen: screen,
             edge: edge,
             delay: delay
         )
     }
 
-    public func notifyMouseExitedCard(gracePeriod: TimeInterval = 0.180) {
-        coordinator.notifyMouseExitedCard(gracePeriod: gracePeriod)
+    public func notifyMouseExitedCard(stack: ShelfStack? = nil) {
+        coordinator.notifyMouseExitedCard(stack: stack)
     }
 
     public func notifyMouseEnteredPopover() {
         coordinator.notifyMouseEnteredPopover()
     }
 
-    public func notifyMouseExitedPopover(gracePeriod: TimeInterval = 0.180) {
-        coordinator.notifyMouseExitedPopover(gracePeriod: gracePeriod)
+    public func notifyMouseExitedPopover() {
+        coordinator.notifyMouseExitedPopover()
     }
 
     public func notifyDragStarted() {
+        self.lastCardScreenFrame = nil
+        self.lastShelfWindowFrame = nil
         coordinator.notifyDragStarted()
     }
 
+    public func notifyDragEnded() {
+        coordinator.notifyDragEnded()
+    }
+
     public func cancelPendingShow() {
+        self.lastCardScreenFrame = nil
+        self.lastShelfWindowFrame = nil
         coordinator.cancelPendingShow()
     }
 
-    public func hidePopover(animated: Bool = true) {
+    public func hidePopover(animated: Bool = false) {
+        self.lastCardScreenFrame = nil
+        self.lastShelfWindowFrame = nil
         if animated {
             coordinator.hideAnimated()
         } else {
@@ -89,17 +118,27 @@ public final class ShelfHoverPopoverController: NSObject, ObservableObject {
     public func showPopover(
         for stack: ShelfStack,
         cardScreenFrame: CGRect,
+        shelfWindowFrame: CGRect? = nil,
         screen: ScreenInfo,
         edge: ShelfEdge
     ) {
+        guard coordinator.isShelfVisibleProvider?() != false else {
+            hidePopover(animated: false)
+            return
+        }
+
+        self.lastCardScreenFrame = cardScreenFrame
+        self.lastShelfWindowFrame = shelfWindowFrame
         let popoverSize = calculatePopoverSize(for: stack)
         let targetFrame = geometryCalculator.calculatePopoverFrame(
             cardScreenFrame: cardScreenFrame,
+            shelfWindowFrame: shelfWindowFrame,
             popoverSize: popoverSize,
             screen: screen,
             edge: edge,
-            spacing: 8.0
+            spacing: 10.0
         )
+        coordinator.notifyPopoverFrameCalculated(popoverFrame: targetFrame)
 
         let window = getOrCreateWindow(targetFrame: targetFrame)
 
@@ -132,6 +171,9 @@ public final class ShelfHoverPopoverController: NSObject, ObservableObject {
 
     /// 执行 Window 级别收起并隐藏动效
     private func performWindowHide(animated: Bool) {
+        self.lastCardScreenFrame = nil
+        self.lastShelfWindowFrame = nil
+
         guard let window = popoverWindow, window.isVisible else { return }
 
         if animated {
@@ -153,14 +195,26 @@ public final class ShelfHoverPopoverController: NSObject, ObservableObject {
     }
 
     private func calculatePopoverSize(for stack: ShelfStack) -> CGSize {
-        let width: CGFloat = 260.0
-        let headerHeight: CGFloat = 34.0
-        let footerHeight: CGFloat = 32.0
-        let itemHeight: CGFloat = 38.0
-        let visibleItems = min(stack.files.count, 5)
-        let listHeight = CGFloat(visibleItems) * itemHeight + 8.0
-        let totalHeight = headerHeight + listHeight + footerHeight
-        return CGSize(width: width, height: min(max(totalHeight, 110), 320))
+        let width: CGFloat = 280.0
+        // 头部高度(24) + 底部提示(22) + 两条分割线(2) + 上下边距与间距(42) = 90
+        let baseOverhead: CGFloat = 90.0
+
+        let visibleItems = Array(stack.files.prefix(5))
+        var totalListHeight: CGFloat = 0
+
+        for (index, file) in visibleItems.enumerated() {
+            // 长文件名自动折行预留更多高度（56px），单行预留 46px
+            let isLongName = file.fileName.count > 18
+            let rowHeight: CGFloat = isLongName ? 56.0 : 46.0
+            totalListHeight += rowHeight
+            if index > 0 {
+                totalListHeight += 6.0 // 项间距
+            }
+        }
+
+        let computedHeight = baseOverhead + totalListHeight + 4.0
+        let clampedHeight = min(max(computedHeight, 140.0), 380.0)
+        return CGSize(width: width, height: clampedHeight)
     }
 
     private func getOrCreateWindow(targetFrame: CGRect) -> ShelfHoverPopoverPanel {

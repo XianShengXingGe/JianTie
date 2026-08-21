@@ -10,6 +10,12 @@ extension ShelfEngine {
 
     /// 处理 Finder 拖拽开始事件
     public func handleDragStarted(files: [URL], at location: CGPoint) {
+        // 如果当前是本应用 Stack 正在向外拖出，严禁将其视为外部拖入并触发入场动画，防止 Shelf 产生位移/跳动
+        guard !isStackDragging else { return }
+
+        // 外部拖拽开启时，立即取消并隐藏气泡
+        ShelfHoverPopoverCoordinator.shared.notifyDragStarted()
+
         let screens = screensProvider()
         let targetScreen: ScreenInfo
         if let existing = activeScreen, !stacks.isEmpty {
@@ -37,6 +43,7 @@ extension ShelfEngine {
 
     /// 处理拖拽结束事件
     public func handleDragEnded() {
+        ShelfHoverPopoverCoordinator.shared.notifyDragEnded()
         guard case .revealedDragging = state else { return }
 
         if !stacks.isEmpty {
@@ -136,6 +143,8 @@ extension ShelfEngine {
     /// 收回并隐藏 Shelf
     public func dismiss() {
         guard state.isVisible else { return }
+
+        ShelfHoverPopoverCoordinator.shared.notifyShelfHidden()
 
         let screen = activeScreen ?? screensProvider().first
 

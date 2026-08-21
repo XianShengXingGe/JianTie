@@ -104,9 +104,9 @@ public final class PreferencesViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// 应用版本描述信息 (纯版本号，如 v1.1.0)
+    /// 应用版本描述信息 (纯版本号，如 v1.1.1)
     public var appVersionText: String {
-        let shortVersion = bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0"
+        let shortVersion = bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.1"
         return "v\(shortVersion)"
     }
 

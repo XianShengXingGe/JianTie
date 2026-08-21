@@ -28,19 +28,40 @@ public struct ClipboardItemCardView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            headerView
-            contentView
+        ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: 8) {
+                headerView
+                contentView
+            }
+            .padding(10)
+            .padding(.trailing, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .liquidGlassCard(cornerRadius: 10, isSelected: isSelected, isHovered: isHovered)
+
+            // 右上角绝对固定位置的删除按钮（仅悬停时显示，不受内容或徽标波动影响）
+            if isHovered {
+                Button(action: onDelete) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .padding(4)
+                        .background(Circle().fill(Color.primary.opacity(0.12)))
+                }
+                .buttonStyle(.plain)
+                .help(L10n.tr("clipboard.delete_item"))
+                .padding(.top, 8)
+                .padding(.trailing, 8)
+                .transition(.opacity.combined(with: .scale(scale: 0.85)))
+            }
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .liquidGlassCard(cornerRadius: 10, isSelected: isSelected, isHovered: isHovered)
         .contentShape(Rectangle())
         .onTapGesture {
             onSelect()
         }
         .onHover { hovering in
-            isHovered = hovering
+            withAnimation(.easeInOut(duration: 0.12)) {
+                isHovered = hovering
+            }
         }
     }
 
@@ -59,20 +80,7 @@ public struct ClipboardItemCardView: View {
 
             badgesView
 
-            Spacer()
-
-            Button(action: onDelete) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.secondary)
-                    .padding(3)
-                    .background(Circle().fill(Color.primary.opacity(0.1)))
-            }
-            .buttonStyle(.plain)
-            .help(L10n.tr("clipboard.delete_item"))
-            .opacity(isHovered ? 1.0 : 0.0)
-            .disabled(!isHovered)
-            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            Spacer(minLength: 0)
         }
         .frame(height: 18)
     }

@@ -47,6 +47,7 @@ final class ShelfContainerHostView<Content: View>: NSHostingView<Content> {
     // MARK: - NSDraggingDestination
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        ShelfHoverPopoverController.shared.notifyDragStarted()
         return .copy
     }
 
@@ -54,19 +55,33 @@ final class ShelfContainerHostView<Content: View>: NSHostingView<Content> {
         return .copy
     }
 
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        ShelfHoverPopoverController.shared.notifyDragEnded()
+    }
+
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let pboard = sender.draggingPasteboard
         guard let urls = pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty else {
+            ShelfHoverPopoverController.shared.notifyDragEnded()
             return false
         }
 
         let loc = sender.draggingLocation
+        let handled: Bool
         if onActionDrop?(loc, urls) == true {
-            return true
+            handled = true
+        } else {
+            onDropFiles?(urls)
+            handled = true
         }
 
-        onDropFiles?(urls)
-        return true
+        ShelfHoverPopoverController.shared.notifyDragEnded()
+        return handled
+    }
+
+    override func draggingEnded(_ sender: NSDraggingInfo) {
+        super.draggingEnded(sender)
+        ShelfHoverPopoverController.shared.notifyDragEnded()
     }
 }
 
@@ -90,7 +105,7 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
         window.isFloatingPanel = true
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.hasShadow = true
+        window.hasShadow = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         super.init(window: window)
@@ -98,6 +113,11 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
 
         setupContentView(window: window)
         bindEngine()
+
+        ShelfHoverPopoverController.shared.coordinator.isShelfVisibleProvider = { [weak self] in
+            guard let self = self, let win = self.window else { return false }
+            return win.isVisible && self.engine.state.isVisible
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -160,8 +180,8 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
 
     /// 用户开始拖拽 Shelf 面板
     public func handlePanelDragStarted() {
-        guard let window = self.window else { return }
-        ShelfHoverPopoverController.shared.hidePopover(animated: false)
+        guard let window = self.window, !engine.isStackDragging else { return }
+        ShelfHoverPopoverController.shared.notifyDragStarted()
         ShelfQuickLookController.shared.stopHoverKeyMonitoring(closePreviewIfOpen: true)
 
         let mouse = NSEvent.mouseLocation
@@ -171,7 +191,7 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
 
     /// 用户拖拽 Shelf 面板移动过程中实时调用，限制在 visibleFrame 内并更新窗口坐标
     public func handlePanelDragMoved() {
-        guard let window = self.window, let clickOffset = self.dragClickOffset else { return }
+        guard let window = self.window, let clickOffset = self.dragClickOffset, !engine.isStackDragging else { return }
         let mouse = NSEvent.mouseLocation
         let proposedOrigin = CGPoint(x: mouse.x - clickOffset.x, y: mouse.y - clickOffset.y)
         let proposedFrame = CGRect(origin: proposedOrigin, size: window.frame.size)
@@ -186,6 +206,7 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
     public func handlePanelDragEnded() {
         guard let window = self.window else { return }
         self.dragClickOffset = nil
+        ShelfHoverPopoverController.shared.notifyDragEnded()
 
         let mouse = NSEvent.mouseLocation
         let currentScreen = resolveScreen(for: mouse)
@@ -244,6 +265,7 @@ public final class ShelfPanelWindowController: NSWindowController, NSWindowDeleg
 
     /// 执行 220ms ease-in 平滑收起隐藏动效
     public func hideWithAnimation(hiddenFrame: CGRect) {
+        ShelfHoverPopoverController.shared.coordinator.notifyShelfHidden()
         ShelfHoverPopoverController.shared.hidePopover(animated: false)
         ShelfQuickLookController.shared.stopHoverKeyMonitoring(closePreviewIfOpen: true)
 

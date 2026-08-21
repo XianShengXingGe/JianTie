@@ -142,27 +142,31 @@ public struct ShelfGeometryCalculator: Sendable {
     /// 计算 Shelf 悬浮卡片对应的富信息浮层屏幕坐标
     /// - Parameters:
     ///   - cardScreenFrame: 卡片在屏幕坐标系中的 NSRect
+    ///   - shelfWindowFrame: Shelf 窗口在屏幕坐标系中的 NSRect（可选，用于确保气泡完全不遮挡 Shelf 面板）
     ///   - popoverSize: 浮层尺寸
     ///   - screen: 显示器信息
     ///   - edge: Shelf 停靠边缘
-    ///   - spacing: 浮层与卡片间距（默认 8px）
+    ///   - spacing: 浮层与 Shelf / 卡片间距（默认 10px）
     /// - Returns: 浮层在屏幕坐标系中的目标 Frame (自动 clamp 到 screen.visibleFrame 内)
     public func calculatePopoverFrame(
         cardScreenFrame: CGRect,
+        shelfWindowFrame: CGRect? = nil,
         popoverSize: CGSize,
         screen: ScreenInfo,
         edge: ShelfEdge,
-        spacing: CGFloat = 8.0
+        spacing: CGFloat = 10.0
     ) -> CGRect {
         let visibleBounds = screen.visibleFrame
 
-        // 水平方向：依据边缘智能锚定展开方向
+        // 水平方向：依据边缘智能锚定展开方向，确保完全处于 Shelf 面板外部并保留间距
         let targetX: CGFloat
         switch edge {
         case .left:
-            targetX = cardScreenFrame.maxX + spacing
+            let anchorX = shelfWindowFrame.map { max($0.maxX, cardScreenFrame.maxX) } ?? cardScreenFrame.maxX
+            targetX = anchorX + spacing
         case .right:
-            targetX = cardScreenFrame.minX - popoverSize.width - spacing
+            let anchorX = shelfWindowFrame.map { min($0.minX, cardScreenFrame.minX) } ?? cardScreenFrame.minX
+            targetX = anchorX - popoverSize.width - spacing
         }
 
         // 垂直方向：以卡片纵向中线为基准居中

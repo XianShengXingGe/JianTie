@@ -96,18 +96,40 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
             removeTrackingArea(existing)
         }
 
-        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeAlways, .inVisibleRect]
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect, .assumeInside]
         let newArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
         addTrackingArea(newArea)
         self.trackingArea = newArea
     }
 
+    public override func viewWillMove(toWindow newWindow: NSWindow?) {
+        super.viewWillMove(toWindow: newWindow)
+        if newWindow == nil {
+            if let tracking = trackingArea {
+                removeTrackingArea(tracking)
+                self.trackingArea = nil
+            }
+            ShelfHoverPopoverController.shared.notifyMouseExitedCard(stack: stack)
+        }
+    }
+
     public override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
-        guard !isDraggingSessionActive, !isDragging else { return }
+        handleMousePositionUpdate()
+    }
 
-        guard let win = self.window else { return }
+    public override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        handleMousePositionUpdate()
+    }
+
+    private func handleMousePositionUpdate() {
+        guard !isDraggingSessionActive, !isDragging else { return }
+        guard NSEvent.pressedMouseButtons == 0 else { return }
+        guard let win = self.window, win.isVisible else { return }
+
         let screenRect = win.convertToScreen(convert(bounds, to: nil))
+        let shelfWindowFrame = win.frame
         let screen = win.screen.map { ScreenInfo(screen: $0) }
             ?? ScreenInfo.currentScreens().first
             ?? ScreenInfo(frame: .zero, visibleFrame: .zero)
@@ -115,6 +137,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
         ShelfHoverPopoverController.shared.notifyMouseEnteredCard(
             stack: stack,
             cardScreenFrame: screenRect,
+            shelfWindowFrame: shelfWindowFrame,
             screen: screen,
             edge: edge
         )
@@ -125,7 +148,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
 
     public override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
-        ShelfHoverPopoverController.shared.notifyMouseExitedCard()
+        ShelfHoverPopoverController.shared.notifyMouseExitedCard(stack: stack)
         if !ShelfHoverPopoverController.shared.isPopoverVisible {
             ShelfQuickLookController.shared.stopHoverKeyMonitoring(closePreviewIfOpen: false)
         }
@@ -187,6 +210,7 @@ public final class ShelfStackDragHostingView: NSView, NSDraggingSource {
     public func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         self.isDraggingSessionActive = false
         self.initialMouseDownLocation = nil
+        ShelfHoverPopoverController.shared.notifyDragEnded()
 
         // 若 operation 不为空（且不是 none），代表外部 App 或 Finder 成功接收并消费了 Drop
         let success = (operation != [])

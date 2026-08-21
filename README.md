@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/XianShengXingGe/JianTie/releases/latest"><img src="https://img.shields.io/badge/Download-v1.1.0-007AFF.svg" alt="Download Latest Release"></a>
+  <a href="https://github.com/XianShengXingGe/JianTie/releases/latest"><img src="https://img.shields.io/badge/Download-v1.1.1-007AFF.svg" alt="Download Latest Release"></a>
   <img src="https://img.shields.io/badge/macOS-13%2B-000000.svg" alt="macOS 13+">
   <img src="https://img.shields.io/badge/Architecture-Apple%20Silicon%20%2F%20Intel-success.svg" alt="Universal">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
@@ -52,14 +52,14 @@ When working on a Mac, handling daily files and copied content often comes with 
 
 ### 📥 Download & Setup
 
-1. Go to [**Releases**](https://github.com/XianShengXingGe/JianTie/releases/latest) and download `JianTie-v1.1.0.dmg`.
+1. Go to [**Releases**](https://github.com/XianShengXingGe/JianTie/releases/latest) and download `JianTie-v1.1.1.dmg`.
 2. Open the `.dmg` file and drag **JianTie** into your **Applications** folder.
 3. Launch the app and grant **Accessibility** permission when prompted (required for automatic pasting upon pressing Enter).
 
 > 💡 **Tip (If macOS says "App cannot be opened because developer cannot be verified")**:  
 > Open the Mac built-in **Terminal** app, paste the following command, and press Enter:
 > ```bash
-> xattr -cr /Applications/JianTie.app
+> xattr -cr /Applications/简贴.app /Applications/JianTie.app 2>/dev/null || true
 > ```
 
 ---
@@ -94,14 +94,14 @@ When working on a Mac, handling daily files and copied content often comes with 
 
 ### 📥 下载与安装
 
-1. 前往 [**下载页面 (GitHub Releases)**](https://github.com/XianShengXingGe/JianTie/releases/latest) 下载最新安装包 `JianTie-v1.1.0.dmg`。
+1. 前往 [**下载页面 (GitHub Releases)**](https://github.com/XianShengXingGe/JianTie/releases/latest) 下载最新安装包 `JianTie-v1.1.1.dmg`。
 2. 打开安装包，将 **简贴** 拖入 **应用程序 (Applications)** 文件夹。
 3. 打开软件，根据提示在 Mac「系统设置 $\rightarrow$ 隐私与安全性 $\rightarrow$ 辅助功能」中勾选允许（用于实现回车自动帮你粘贴）。
 
 > 💡 **小贴士（首次打开若提示“无法验证开发者”）**：  
 > 打开 Mac 自带的「终端 (Terminal)」App，粘贴运行以下命令即可：
 > ```bash
-> xattr -cr /Applications/JianTie.app
+> xattr -cr /Applications/简贴.app /Applications/JianTie.app 2>/dev/null || true
 > ```
 
 ---

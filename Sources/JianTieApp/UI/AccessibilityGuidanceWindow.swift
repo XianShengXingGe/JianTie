@@ -63,7 +63,7 @@ public struct AccessibilityGuidanceView: View {
         }
         .padding(24)
         .frame(width: 380)
-        .liquidGlassPanel(cornerRadius: 18, material: .hudWindow)
+        .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
     }
 }
 

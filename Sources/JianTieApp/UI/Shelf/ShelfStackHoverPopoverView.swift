@@ -24,44 +24,56 @@ public struct ShelfStackHoverPopoverView: View {
             HStack {
                 Text(stack.count > 1 ? L10n.tr("shelf.popover_contains_files", stack.count) : L10n.tr("shelf.popover_file_details"))
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.primary.opacity(0.85))
 
                 Spacer()
 
                 Text(formattedTotalSize)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.secondary.opacity(0.8))
+                    .foregroundColor(.secondary)
             }
             .padding(.horizontal, 10)
             .padding(.top, 8)
 
-            Divider()
-                .background(Color.primary.opacity(0.08))
+            LiquidGlassDivider()
 
-            // File items list
-            ScrollView(.vertical, showsIndicators: stack.files.count > 4) {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(stack.files) { fileRef in
-                        if let url = fileRef.resolveURL() {
-                            fileRowView(fileRef: fileRef, url: url)
+            // File items list (≤ 5 个文件自适应完整展示，超过 5 个才启用滚动翻页)
+            Group {
+                if stack.files.count <= 5 {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(stack.files) { fileRef in
+                            if let url = fileRef.resolveURL() {
+                                fileRowView(fileRef: fileRef, url: url)
+                            }
                         }
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                } else {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(stack.files) { fileRef in
+                                if let url = fileRef.resolveURL() {
+                                    fileRowView(fileRef: fileRef, url: url)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                    }
                 }
-                .padding(.horizontal, 6)
             }
-            .frame(maxHeight: 220)
 
-            Divider()
-                .background(Color.primary.opacity(0.08))
+            LiquidGlassDivider()
 
             // Footer / Hint
             HStack(spacing: 6) {
                 Text("␣ Space")
                     .font(.system(size: 9, weight: .bold, design: .rounded))
                     .foregroundColor(.secondary)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1.5)
-                    .liquidGlassBadge(isCapsule: false, cornerRadius: 4)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .liquidGlassBadge(isCapsule: false, cornerRadius: 5)
 
                 Text(L10n.tr("shelf.popover_hint"))
                     .font(.system(size: 10))
@@ -71,8 +83,8 @@ public struct ShelfStackHoverPopoverView: View {
             .padding(.horizontal, 10)
             .padding(.bottom, 8)
         }
-        .frame(width: 260)
-        .liquidGlassPanel(cornerRadius: 14, material: .popover)
+        .frame(width: 280)
+        .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
         .onHover { isInside in
             if isInside {
                 ShelfHoverPopoverController.shared.notifyMouseEnteredPopover()
@@ -90,14 +102,14 @@ public struct ShelfStackHoverPopoverView: View {
             Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 22, height: 22)
+                .frame(width: 24, height: 24)
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 1.5) {
                 Text(fileRef.fileName)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.primary)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
 
                 if fileRef.fileSize > 0 {
                     Text(ByteCountFormatter.string(fromByteCount: fileRef.fileSize, countStyle: .file))
@@ -106,25 +118,27 @@ public struct ShelfStackHoverPopoverView: View {
                 }
             }
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 4)
 
-            if isRowHovered {
-                Button(action: {
-                    onPreviewSingleFile(url)
-                }) {
-                    Image(systemName: "eye.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(.accentColor)
-                        .padding(4)
-                        .background(Circle().fill(Color.accentColor.opacity(0.12)))
-                }
-                .buttonStyle(.plain)
-                .help(L10n.tr("shelf.popover_preview_help"))
+            // 固定占位预览按钮，仅在悬停时平滑淡入，保证宽度绝对恒定，彻底避免文件名折行与高度跳变
+            Button(action: {
+                onPreviewSingleFile(url)
+            }) {
+                Image(systemName: "eye.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.accentColor)
+                    .padding(4)
+                    .background(Circle().fill(Color.accentColor.opacity(0.12)))
             }
+            .buttonStyle(.plain)
+            .help(L10n.tr("shelf.popover_preview_help"))
+            .opacity(isRowHovered ? 1.0 : 0.0)
+            .allowsHitTesting(isRowHovered)
+            .animation(.easeInOut(duration: 0.12), value: isRowHovered)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 4)
-        .liquidGlassCard(cornerRadius: 6, isHovered: isRowHovered)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .liquidGlassCard(cornerRadius: 10, isHovered: isRowHovered)
         .contentShape(Rectangle())
         .onHover { hovering in
             hoveredFileURL = hovering ? url : nil

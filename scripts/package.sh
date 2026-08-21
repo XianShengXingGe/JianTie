@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${1:-1.1.0}"
+VERSION="${1:-1.1.1}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${PROJECT_ROOT}/dist"
 STAGE_DIR="/tmp/jiantie_package_${VERSION}_$$"
@@ -40,16 +40,17 @@ lipo -info "${APP_BUNDLE}/Contents/MacOS/JianTie"
 
 echo "-> Copying Info.plist and PkgInfo..."
 cp "${PROJECT_ROOT}/Sources/JianTieApp/Info.plist" "${APP_BUNDLE}/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "${APP_BUNDLE}/Contents/Info.plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string ${VERSION}" "${APP_BUNDLE}/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" "${APP_BUNDLE}/Contents/Info.plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${VERSION}" "${APP_BUNDLE}/Contents/Info.plist"
 echo "APPL????" > "${APP_BUNDLE}/Contents/PkgInfo"
 
 echo "-> Copying Resource Bundles and Assets..."
 # Copy SPM Resource Bundles
-if [ -d "${PROJECT_ROOT}/.build/arm64-apple-macosx/release/JianTie_JianTieApp.bundle" ]; then
-    cp -R "${PROJECT_ROOT}/.build/arm64-apple-macosx/release/JianTie_JianTieApp.bundle" "${APP_BUNDLE}/Contents/Resources/"
-fi
-if [ -d "${PROJECT_ROOT}/.build/arm64-apple-macosx/release/JianTie_JianTieCore.bundle" ]; then
-    cp -R "${PROJECT_ROOT}/.build/arm64-apple-macosx/release/JianTie_JianTieCore.bundle" "${APP_BUNDLE}/Contents/Resources/"
-fi
+for bundle_name in JianTie_JianTieApp.bundle JianTie_JianTieCore.bundle; do
+    if [ -d "${PROJECT_ROOT}/.build/arm64-apple-macosx/release/${bundle_name}" ]; then
+        cp -R "${PROJECT_ROOT}/.build/arm64-apple-macosx/release/${bundle_name}" "${APP_BUNDLE}/Contents/Resources/"
+    fi
+done
 
 # Copy App Icons, QRCodes and Localization resources directly into Resources
 for item in "${PROJECT_ROOT}/Sources/JianTieApp/Resources"/*; do
@@ -100,12 +101,15 @@ hdiutil verify "${DMG_OUT}"
 echo "-> Creating ZIP: ${ZIP_OUT}..."
 ditto -c -k --sequesterRsrc --keepParent "${APP_BUNDLE}" "${ZIP_OUT}"
 
-# Also sync the clean .app back to project root
+# Sync DMG, ZIP, and clean .app back to project root
 rm -rf "${PROJECT_ROOT}/${APP_NAME}.app"
 cp -R "${APP_BUNDLE}" "${PROJECT_ROOT}/${APP_NAME}.app"
+xattr -cr "${PROJECT_ROOT}/${APP_NAME}.app"
+cp -f "${DMG_OUT}" "${PROJECT_ROOT}/"
+cp -f "${ZIP_OUT}" "${PROJECT_ROOT}/"
 
 # Clean up staging
 rm -rf "${STAGE_DIR}"
 
 echo "=== Packaging Complete! ==="
-ls -lh "${BUILD_DIR}/JianTie-v${VERSION}.dmg" "${BUILD_DIR}/JianTie-v${VERSION}.zip" "${PROJECT_ROOT}/${APP_NAME}.app"
+ls -lh "${PROJECT_ROOT}/JianTie-v${VERSION}.dmg" "${PROJECT_ROOT}/JianTie-v${VERSION}.zip" "${PROJECT_ROOT}/${APP_NAME}.app"

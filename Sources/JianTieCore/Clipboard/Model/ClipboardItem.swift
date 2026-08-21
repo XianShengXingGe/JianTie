@@ -28,4 +28,9 @@ public struct ClipboardItem: Identifiable, Equatable, Sendable, Codable {
             return nil
         }
     }
+
+    /// 判断与另一项的内容是否实质相同（纯文本相同或图片内容哈希相同）
+    public func isContentEqual(to other: ClipboardItem) -> Bool {
+        return content.isContentEqual(to: other.content)
+    }
 }

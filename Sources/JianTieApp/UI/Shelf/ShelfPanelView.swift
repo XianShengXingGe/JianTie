@@ -41,25 +41,21 @@ public struct ShelfPanelView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .gesture(
-            DragGesture(minimumDistance: 1, coordinateSpace: .global)
+            DragGesture(minimumDistance: 6, coordinateSpace: .global)
                 .onChanged { _ in
+                    guard !engine.isStackDragging && !engine.state.isDragging else { return }
                     if !engine.isPanelDragging {
                         onPanelDragStart?()
                     }
                     onPanelDragMove?()
                 }
                 .onEnded { _ in
+                    guard engine.isPanelDragging else { return }
                     onPanelDragEnd?()
                 }
         )
         .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
         .opacity(engine.isPanelDragging ? 0.92 : 1.0)
-        .shadow(
-            color: Color.black.opacity(engine.isPanelDragging ? 0.35 : 0.12),
-            radius: engine.isPanelDragging ? 22 : 8,
-            x: 0,
-            y: engine.isPanelDragging ? 8 : 2
-        )
         .animation(.spring(response: 0.28, dampingFraction: 0.8), value: engine.isActionZoneVisible)
         .animation(.spring(response: 0.22, dampingFraction: 0.8), value: engine.isPanelDragging)
     }
@@ -84,7 +80,7 @@ public struct ShelfPanelView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
 
-            ScrollView(.vertical, showsIndicators: true) {
+            ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 8) {
                     ForEach(engine.stacks) { stack in
                         ShelfDraggableStackView(

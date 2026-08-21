@@ -201,6 +201,10 @@ public final class ShelfEngine: ObservableObject {
     public func dropFiles(_ urls: [URL], on targetScreen: ScreenInfo? = nil) -> ShelfStack? {
         guard !urls.isEmpty else { return nil }
 
+        // 接收新拖入文件时，立即重置旧气泡并解除拖拽静默状态
+        ShelfHoverPopoverCoordinator.shared.hideImmediately()
+        ShelfHoverPopoverCoordinator.shared.notifyDragEnded()
+
         let references = urls.map { ShelfFileReference(url: $0) }
         let stack = ShelfStack(files: references)
         stacks.insert(stack, at: 0)
@@ -241,9 +245,18 @@ public final class ShelfEngine: ObservableObject {
 
     /// 移除指定 Stack（例如点击 ✕ 或外部成功消费）
     public func removeStack(id: UUID) {
+        ShelfHoverPopoverCoordinator.shared.notifyStackRemoved(id: id)
         stacks.removeAll { $0.id == id }
         if stacks.isEmpty {
             dismiss()
+        } else if state.isDragging {
+            // 确保移除 Stack 后立即消除拖拽态，恢复为正常 Stored 态
+            let screens = ScreenInfo.currentScreens()
+            let screen = activeScreen ?? screens.first
+            let frame = screen?.frame ?? .zero
+            let newState = ShelfState.stored(screenFrame: frame, edge: edge)
+            self.state = newState
+            self.onStateChanged?(newState)
         }
     }
 
@@ -252,13 +265,17 @@ public final class ShelfEngine: ObservableObject {
     /// 通知 Stack 拖拽开始，激活底部动作区
     public func notifyStackDragStarted(stack: ShelfStack) {
         self.isStackDragging = true
+        self.isPanelDragging = false
         self.activeDraggingStack = stack
+        ShelfHoverPopoverCoordinator.shared.notifyDragStarted()
     }
 
     /// 通知 Stack 拖拽结束
     public func notifyStackDragEnded() {
         self.isStackDragging = false
         self.activeDraggingStack = nil
+        dragMonitor.resetDraggingState()
+        ShelfHoverPopoverCoordinator.shared.notifyDragEnded()
     }
 
     /// 拖入 AirDrop 区域：调用系统分享并在成功后清除 Stack
@@ -317,16 +334,16 @@ public final class ShelfEngine: ObservableObject {
         notifyStackDragEnded()
         if success {
             removeStack(id: stackId)
-        } else {
-            // 拖拽取消或失败，安全保留 Stack 并恢复为 Stored 状态
-            if !stacks.isEmpty {
-                let screens = ScreenInfo.currentScreens()
-                let screen = activeScreen ?? screens.first
-                let frame = screen?.frame ?? .zero
-                let newState = ShelfState.stored(screenFrame: frame, edge: edge)
-                self.state = newState
-                self.onStateChanged?(newState)
-            }
+        }
+        
+        // 拖拽释放后，若 Shelf 仍有剩余文件，确保状态绝对恢复为 Stored 展示状态
+        if !stacks.isEmpty {
+            let screens = ScreenInfo.currentScreens()
+            let screen = activeScreen ?? screens.first
+            let frame = screen?.frame ?? .zero
+            let newState = ShelfState.stored(screenFrame: frame, edge: edge)
+            self.state = newState
+            self.onStateChanged?(newState)
         }
     }
 

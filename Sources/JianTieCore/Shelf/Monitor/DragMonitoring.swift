@@ -23,4 +23,7 @@ public protocol DragMonitoring: Sendable {
 
     /// 停止监听
     func stopMonitoring()
+
+    /// 重置并同步拖拽状态（如内部拖出结束或异常释放时）
+    func resetDraggingState()
 }

@@ -43,11 +43,11 @@ public struct ShelfActionZoneView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 32)
-        .liquidGlassCard(cornerRadius: 8, isTargeted: isAirDropTargeted)
+        .liquidGlassCard(cornerRadius: 10, isTargeted: isAirDropTargeted)
         .overlay(
             Group {
                 if !isAirDropTargeted {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .strokeBorder(
                             Color.primary.opacity(0.12),
                             style: StrokeStyle(lineWidth: 1, dash: [3, 3])
@@ -89,14 +89,14 @@ public struct ShelfActionZoneView: View {
         .frame(maxWidth: .infinity)
         .frame(height: 32)
         .liquidGlassCard(
-            cornerRadius: 8,
+            cornerRadius: 10,
             isTargeted: isCopyPathTargeted || engine.actionFeedback != nil,
             tintColor: engine.actionFeedback != nil ? .green : nil
         )
         .overlay(
             Group {
                 if !isCopyPathTargeted && engine.actionFeedback == nil {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .strokeBorder(
                             Color.primary.opacity(0.12),
                             style: StrokeStyle(lineWidth: 1, dash: [3, 3])

@@ -59,8 +59,8 @@ public final class DirectPasteService: Sendable {
         // 4. 等待 30ms 确保目标应用窗口与输入框完全捕获焦点
         await delayProvider(yieldDelay)
 
-        // 5. 合成并发送 ⌘V 按键事件
-        let synthSuccess = keySynthesizer.synthesizeCommandV()
+        // 5. 异步合成并发送 ⌘V 按键事件
+        let synthSuccess = await keySynthesizer.synthesizeCommandVAsync()
         return synthSuccess
     }
 }

@@ -27,14 +27,7 @@ public struct ClipboardPanelView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
 
-            Divider()
-                .background(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.15), Color.primary.opacity(0.08)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+            LiquidGlassDivider()
 
             listContentView
         }
@@ -96,7 +89,7 @@ public struct ClipboardPanelView: View {
             if viewModel.filteredItems.isEmpty {
                 emptyStateView
             } else {
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(spacing: 6) {
                         ForEach(Array(viewModel.filteredItems.enumerated()), id: \.element.id) { index, item in
                             ClipboardItemCardView(

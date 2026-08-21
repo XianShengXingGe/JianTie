@@ -12,7 +12,7 @@ public struct VisualEffectBackground: NSViewRepresentable {
 
     public init(
         material: NSVisualEffectView.Material = .hudWindow,
-        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
+        blendingMode: NSVisualEffectView.BlendingMode = .withinWindow,
         cornerRadius: CGFloat = 0
     ) {
         self.material = material
@@ -26,20 +26,12 @@ public struct VisualEffectBackground: NSViewRepresentable {
         view.blendingMode = blendingMode
         view.state = .active
         view.wantsLayer = true
-        if cornerRadius > 0 {
-            view.layer?.cornerRadius = cornerRadius
-            view.layer?.masksToBounds = true
-        }
         return view
     }
 
     public func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
-        if cornerRadius > 0 {
-            nsView.layer?.cornerRadius = cornerRadius
-            nsView.layer?.masksToBounds = true
-        }
     }
 }
 
@@ -71,7 +63,7 @@ public struct LiquidGlassPanelModifier: ViewModifier {
     public init(
         cornerRadius: CGFloat = 16,
         material: NSVisualEffectView.Material = .hudWindow,
-        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow
+        blendingMode: NSVisualEffectView.BlendingMode = .withinWindow
     ) {
         self.cornerRadius = cornerRadius
         self.material = material
@@ -362,11 +354,33 @@ public struct LiquidGlassSectionModifier: ViewModifier {
     }
 }
 
+/// Liquid Glass 风格高光分割线组件
+public struct LiquidGlassDivider: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    public init() {}
+
+    public var body: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    stops: [
+                        .init(color: colorScheme == .dark ? Color.white.opacity(0.18) : Color.white.opacity(0.70), location: 0.0),
+                        .init(color: Color.primary.opacity(0.06), location: 1.0)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(height: 1)
+    }
+}
+
 public extension View {
     func liquidGlassPanel(
         cornerRadius: CGFloat = 16,
         material: NSVisualEffectView.Material = .hudWindow,
-        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow
+        blendingMode: NSVisualEffectView.BlendingMode = .withinWindow
     ) -> some View {
         modifier(LiquidGlassPanelModifier(cornerRadius: cornerRadius, material: material, blendingMode: blendingMode))
     }
@@ -395,12 +409,25 @@ public extension View {
         modifier(LiquidGlassBadgeModifier(isCapsule: isCapsule, cornerRadius: cornerRadius, tintColor: tintColor))
     }
 
-    func liquidGlassInput(cornerRadius: CGFloat = 8) -> some View {
+    func liquidGlassInput(cornerRadius: CGFloat = 10) -> some View {
         modifier(LiquidGlassInputModifier(cornerRadius: cornerRadius))
     }
 
     func liquidGlassSection(cornerRadius: CGFloat = 12) -> some View {
         modifier(LiquidGlassSectionModifier(cornerRadius: cornerRadius))
+    }
+
+    func liquidGlassDivider() -> some View {
+        self.background(
+            LinearGradient(
+                stops: [
+                    .init(color: Color.white.opacity(0.18), location: 0.0),
+                    .init(color: Color.primary.opacity(0.06), location: 1.0)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
     }
 
     func windowDraggable() -> some View {

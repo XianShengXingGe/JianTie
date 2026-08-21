@@ -83,7 +83,7 @@ public struct DonationModalView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
                             .liquidGlassCard(
-                                cornerRadius: 8,
+                                cornerRadius: 10,
                                 isSelected: isSelected,
                                 tintColor: channel.brandColor
                             )
@@ -99,9 +99,9 @@ public struct DonationModalView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(maxWidth: 240, maxHeight: 280)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
                                     .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                             )
                             .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 3)
@@ -137,7 +137,7 @@ public struct DonationModalView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 250)
-                        .liquidGlassCard(cornerRadius: 12)
+                        .liquidGlassCard(cornerRadius: 10)
                     }
 
                     Text(selectedChannel.subtitle)
@@ -159,7 +159,7 @@ public struct DonationModalView: View {
             }
             .padding(20)
             .frame(width: 360)
-            .liquidGlassPanel(cornerRadius: 18, material: .hudWindow)
+            .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
             .shadow(color: Color.black.opacity(0.3), radius: 24, x: 0, y: 12)
         }
         .onAppear {

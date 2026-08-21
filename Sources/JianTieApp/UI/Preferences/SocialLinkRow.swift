@@ -91,7 +91,7 @@ public struct SocialLinkRow: View {
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
-        .liquidGlassCard(cornerRadius: 8, isHovered: isHovered)
+        .liquidGlassCard(cornerRadius: 10, isHovered: isHovered)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 self.isHovered = hovering

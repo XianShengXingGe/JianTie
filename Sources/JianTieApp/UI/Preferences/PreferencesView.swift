@@ -109,14 +109,7 @@ public struct PreferencesView: View {
             .padding(.bottom, 14)
             .windowDraggable()
 
-            Divider()
-                .background(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.15), Color.primary.opacity(0.08)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+            LiquidGlassDivider()
 
             // Settings Content
             ScrollView(.vertical, showsIndicators: false) {
@@ -145,8 +138,7 @@ public struct PreferencesView: View {
                                 .labelsHidden()
                             }
 
-                            Divider()
-                                .background(Color.primary.opacity(0.06))
+                            LiquidGlassDivider()
 
                             HStack(alignment: .center, spacing: 16) {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -225,8 +217,7 @@ public struct PreferencesView: View {
                                 HotKeyRecorderView(viewModel: hotKeyRecorderViewModel)
                             }
 
-                            Divider()
-                                .background(Color.primary.opacity(0.06))
+                            LiquidGlassDivider()
 
                             HStack(alignment: .center) {
                                 Text(L10n.tr("preferences.capacity_limit"))
@@ -265,8 +256,7 @@ public struct PreferencesView: View {
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
 
-                            Divider()
-                                .background(Color.primary.opacity(0.06))
+                            LiquidGlassDivider()
 
                             HStack(alignment: .center) {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -383,8 +373,7 @@ public struct PreferencesView: View {
                                 .help(L10n.tr("preferences.donate_tooltip"))
                             }
 
-                            Divider()
-                                .background(Color.primary.opacity(0.06))
+                            LiquidGlassDivider()
 
                             // 社交与合作渠道列表
                             VStack(spacing: 6) {
@@ -402,7 +391,7 @@ public struct PreferencesView: View {
             }
         }
         .frame(width: 480, height: 600)
-        .liquidGlassPanel(cornerRadius: 18, material: .hudWindow)
+        .liquidGlassPanel(cornerRadius: 16, material: .hudWindow)
         .overlay {
             if showDonationModal {
                 DonationModalView(isPresented: $showDonationModal)
